@@ -43,6 +43,14 @@ def main():
         elif b["status"] == "low":
             lines.append(f"  • {b['service']} credits low: {b['remaining']} left.")
 
+    try:
+        import learnings
+        n = len(learnings.get(conn))
+        if n:
+            lines.append(f"  • tuned to you: {n} learned preference(s) applied to drafts/targeting.")
+    except Exception:
+        pass
+
     if lines:
         print("\n".join(lines), flush=True)
 
