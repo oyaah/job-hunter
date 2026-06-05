@@ -22,3 +22,6 @@ venv/
 
 # OS
 .DS_Store
+
+# tests kept local, not shipped in the plugin repo
+tests/
