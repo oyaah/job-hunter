@@ -264,23 +264,39 @@ def _claim_for_send(message_id):
     return dict(row) if row else None
 
 
+def _resolve_channel(channel):
+    """'auto' picks the lightest working option: SMTP if an App Password is set,
+    else local Mail.app on macOS (zero credentials — uses the already-signed-in
+    account), else OAuth Gmail. Lets a Mac user send with no setup at all."""
+    if channel != "auto":
+        return channel
+    from integrations import smtp_send, mailapp
+    if smtp_send.configured():
+        return "smtp"
+    if mailapp.available():
+        return "mailapp"
+    return "gmail"
+
+
 def _send_via(channel, to, subject, body):
+    channel = _resolve_channel(channel)
     if channel == "mailapp":
         from integrations import mailapp
         mailapp.send(to, subject, body)
     elif channel == "gmail":
         from integrations import gmail
         gmail.send_message(to, subject, body, _gmail_creds_path())
-    else:  # smtp — the simple cross-platform default
+    else:  # smtp
         from integrations import smtp_send
         smtp_send.send(to, subject, body)
+    return channel
 
 
 @mcp.tool()
-def send_email(message_id: int, channel: str = "smtp") -> dict:
-    """Send an APPROVED email. channel = smtp (default — Gmail App Password, works on
-    every OS + harness) | gmail (OAuth API) | mailapp (local macOS Mail). Atomically
-    claims the message so it can't double-send; 'sent' on success, reverts on failure."""
+def send_email(message_id: int, channel: str = "auto") -> dict:
+    """Send an APPROVED email. channel = auto (default — SMTP if configured, else
+    macOS Mail.app with zero credentials, else OAuth) | smtp | mailapp | gmail.
+    Atomically claims the message so it can't double-send; reverts on failure."""
     msg = _claim_for_send(message_id)
     if msg is None:
         row = _conn.execute("SELECT status FROM messages WHERE id=?", (message_id,)).fetchone()
@@ -291,14 +307,13 @@ def send_email(message_id: int, channel: str = "smtp") -> dict:
         state.set_message_status(_conn, message_id, "approved")  # release claim
         return {"error": f"message {message_id} has no contact email — enrich first."}
     try:
-        _send_via(channel, msg["to_email"], msg["subject"] or "", msg["body"])
+        used = _send_via(channel, msg["to_email"], msg["subject"] or "", msg["body"])
     except Exception as e:  # noqa: BLE001
         state.set_message_status(_conn, message_id, "approved")  # revert claim, allow retry
         return {"status": "error", "detail": str(e),
-                "hint": "Check GMAIL_ADDRESS/GMAIL_APP_PASSWORD (run /job-hunter:setup), "
-                        "or try channel='mailapp' on macOS."}
+                "hint": "Set GMAIL_ADDRESS/GMAIL_APP_PASSWORD, or use channel='mailapp' on macOS."}
     state.set_message_status(_conn, message_id, "sent", sent=True)
-    return {"message_id": message_id, "status": "sent", "channel": channel}
+    return {"message_id": message_id, "status": "sent", "channel": used}
 
 
 @mcp.tool()
