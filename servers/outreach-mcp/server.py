@@ -334,5 +334,39 @@ def learnings_context() -> str:
     return learnings.as_context(_conn)
 
 
+# ----------------------------------------------------- credit lifecycle (R11)
+@mcp.tool()
+def credits_refresh(service: str = "hunter", account_id: str = "default") -> dict:
+    """Poll the provider's balance endpoint (source of truth) and update the cached row.
+    Currently Hunter exposes a free balance endpoint; others are tracked via the ledger
+    + reactive 402/429 detection. Use this to reconcile drift."""
+    if service != "hunter":
+        return {"service": service, "note": "no balance endpoint; tracked via ledger + 402/429"}
+    from integrations import hunter
+    try:
+        bal = hunter.account_balance()
+    except Exception as e:  # noqa: BLE001
+        if e.__class__.__name__ == "CreditError":
+            credits.mark_exhausted(_conn, service, account_id)
+            return credits.check(_conn, service, account_id)
+        return {"status": "error", "detail": str(e)}
+    credits.seed(_conn, service, account_id,
+                 remaining=bal["remaining"], monthly_quota=bal["quota"])
+    return credits.check(_conn, service, account_id)
+
+
+@mcp.tool()
+def credits_add_account(service: str, account_id: str, remaining: int = 0,
+                        monthly_quota: int = 0) -> dict:
+    """Register an additional account for a service so the chain can rotate to it when
+    the primary is exhausted. NOTE: rotating fresh free accounts to dodge limits violates
+    most providers' ToS — surface this to the user; never do it silently."""
+    credits.seed(_conn, service, account_id, remaining=remaining,
+                 monthly_quota=monthly_quota or None)
+    return {"service": service, "account_id": account_id, "registered": True,
+            "warning": "Rotating free accounts to extend credits violates most providers' "
+                       "Terms of Service. Use a paid plan for sustained volume."}
+
+
 if __name__ == "__main__":
     mcp.run()
