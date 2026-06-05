@@ -70,3 +70,18 @@ CREATE TABLE IF NOT EXISTS ledger (
 
 CREATE INDEX IF NOT EXISTS idx_contacts_company ON contacts(company_slug);
 CREATE INDEX IF NOT EXISTS idx_messages_contact ON messages(contact_id);
+
+-- Self-evolving layer: insights the system learns about THIS user over time
+-- (from review edits, rejections, explicit guidance). Loaded before every
+-- drafting/targeting decision so the workflow tunes itself to the user.
+CREATE TABLE IF NOT EXISTS learnings (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    category    TEXT NOT NULL,          -- voice|targeting|enrichment|outreach|general
+    insight     TEXT NOT NULL,
+    weight      REAL NOT NULL DEFAULT 1.0,
+    source      TEXT,                   -- review-edit|rejection|approval|explicit
+    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(category, insight)
+);
+CREATE INDEX IF NOT EXISTS idx_learnings_cat ON learnings(category);

@@ -7,6 +7,8 @@ description: Onboard a user into job-hunter — ingest resume, capture targeting
 
 Guided onboarding. Walk the user through each step, confirm before moving on, and write results to the outreach store + `${CLAUDE_PLUGIN_DATA}`. Keep it conversational — this is the only high-touch step; everything after is automated.
 
+> These steps are a checklist of what to capture, not a rigid script. Read the user, skip what doesn't apply, go deeper where they have strong opinions. Whenever the user states a preference about how they want outreach done ("I never want X", "always lead with Y"), record it with `learning_record` — that's how the system starts tuning to them from minute one.
+
 ## Steps
 
 ### 1. Resume

@@ -12,6 +12,7 @@ import store  # noqa: E402
 import state  # noqa: E402
 import credits  # noqa: E402
 import enrichment  # noqa: E402
+import learnings  # noqa: E402
 
 mcp = FastMCP("outreach")
 
@@ -189,6 +190,30 @@ def verify_email(email: str) -> dict:
         return {"status": "error", "detail": str(e)}
     credits.record(_conn, service, account, "verify", 1)
     return res
+
+
+# ----------------------------------------------------- self-evolving learnings
+@mcp.tool()
+def learning_record(category: str, insight: str, source: str = "explicit") -> dict:
+    """Capture something learned about THIS user (category = voice|targeting|enrichment|
+    outreach|general). Call this whenever the user edits a draft, rejects a target, or
+    states a preference — the next run loads it. Repeats reinforce, they don't duplicate."""
+    learnings.record(_conn, category, insight, source=source)
+    return {"category": category, "insight": insight, "recorded": True}
+
+
+@mcp.tool()
+def learnings_get(category: str = "") -> list:
+    """Load accumulated understanding of the user. Read this BEFORE targeting or drafting
+    so the workflow applies what it already knows. Empty category = everything."""
+    return learnings.get(_conn, category or None)
+
+
+@mcp.tool()
+def learnings_context() -> str:
+    """All learnings rendered as a compact prompt block — the system's current
+    understanding of the user, ready to inject before a decision."""
+    return learnings.as_context(_conn)
 
 
 if __name__ == "__main__":
