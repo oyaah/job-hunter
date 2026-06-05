@@ -1,10 +1,16 @@
 """outreach-mcp — FastMCP server. All job-hunter state, credit, and (later)
 integration tools live here. Thin skills + worker agents call these tools;
 the heavy logic stays server-side to keep agent context lean (KTD1)."""
+import logging
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
+
+# Hunter takes its key as a URL query param; keep httpx from logging request URLs
+# (which would leak the API key to stdout/logs).
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 from mcp.server.fastmcp import FastMCP  # noqa: E402
 
@@ -258,11 +264,23 @@ def _claim_for_send(message_id):
     return dict(row) if row else None
 
 
+def _send_via(channel, to, subject, body):
+    if channel == "mailapp":
+        from integrations import mailapp
+        mailapp.send(to, subject, body)
+    elif channel == "gmail":
+        from integrations import gmail
+        gmail.send_message(to, subject, body, _gmail_creds_path())
+    else:  # smtp — the simple cross-platform default
+        from integrations import smtp_send
+        smtp_send.send(to, subject, body)
+
+
 @mcp.tool()
-def send_email(message_id: int, channel: str = "gmail") -> dict:
-    """Send an APPROVED email. channel = gmail (default) | mailapp (local macOS Mail,
-    zero-OAuth fallback). Atomically claims the message before sending so it can't
-    double-send; marks 'sent' on success, reverts to 'approved' on failure."""
+def send_email(message_id: int, channel: str = "smtp") -> dict:
+    """Send an APPROVED email. channel = smtp (default — Gmail App Password, works on
+    every OS + harness) | gmail (OAuth API) | mailapp (local macOS Mail). Atomically
+    claims the message so it can't double-send; 'sent' on success, reverts on failure."""
     msg = _claim_for_send(message_id)
     if msg is None:
         row = _conn.execute("SELECT status FROM messages WHERE id=?", (message_id,)).fetchone()
@@ -273,18 +291,12 @@ def send_email(message_id: int, channel: str = "gmail") -> dict:
         state.set_message_status(_conn, message_id, "approved")  # release claim
         return {"error": f"message {message_id} has no contact email — enrich first."}
     try:
-        if channel == "mailapp":
-            from integrations import mailapp
-            mailapp.send(msg["to_email"], msg["subject"] or "", msg["body"])
-        else:
-            from integrations import gmail
-            gmail.send_message(msg["to_email"], msg["subject"] or "", msg["body"],
-                               _gmail_creds_path())
+        _send_via(channel, msg["to_email"], msg["subject"] or "", msg["body"])
     except Exception as e:  # noqa: BLE001
         state.set_message_status(_conn, message_id, "approved")  # revert claim, allow retry
         return {"status": "error", "detail": str(e),
-                "hint": "Gmail token may have expired (Testing-mode ~weekly). "
-                        "Re-run /job-hunter:setup, or retry with channel='mailapp'."}
+                "hint": "Check GMAIL_ADDRESS/GMAIL_APP_PASSWORD (run /job-hunter:setup), "
+                        "or try channel='mailapp' on macOS."}
     state.set_message_status(_conn, message_id, "sent", sent=True)
     return {"message_id": message_id, "status": "sent", "channel": channel}
 

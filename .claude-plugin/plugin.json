@@ -36,16 +36,28 @@
       "description": "From Lemlist Settings → Integrations. No free tier. Enables sequenced sending. Leave blank to use Gmail only.",
       "sensitive": true
     },
+    "gmail_address": {
+      "type": "string",
+      "title": "Your Gmail address",
+      "description": "The address outreach is sent from (SMTP, the default send channel). e.g. you@gmail.com",
+      "sensitive": false
+    },
+    "gmail_app_password": {
+      "type": "string",
+      "title": "Gmail App Password",
+      "description": "16-char App Password (NOT your login password). Enable 2FA, then myaccount.google.com/apppasswords. The simplest cross-platform send path — no OAuth.",
+      "sensitive": true
+    },
     "gmail_token_path": {
       "type": "string",
-      "title": "Gmail OAuth token path",
-      "description": "Where the Gmail OAuth token is stored. Default: ~/.config/job-hunter/gmail_token.json (0600). Created by /job-hunter:setup.",
+      "title": "Gmail OAuth token path (optional)",
+      "description": "Only for the OAuth 'gmail' channel. Default: ~/.config/job-hunter/gmail_token.json. Most users use SMTP instead.",
       "sensitive": false
     },
     "gmail_credentials_path": {
       "type": "string",
-      "title": "Gmail OAuth client secret path",
-      "description": "Path to the Desktop-app credentials.json downloaded from Google Cloud Console. Default: ~/.config/job-hunter/credentials.json.",
+      "title": "Gmail OAuth client secret path (optional)",
+      "description": "Only for the OAuth 'gmail' channel. Path to Desktop-app credentials.json. Most users use SMTP instead.",
       "sensitive": false
     }
   }

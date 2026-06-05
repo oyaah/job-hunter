@@ -26,12 +26,13 @@ The plugin prompts for these as sensitive `userConfig` at enable-time (keychain-
 - **Apollo / ContactOut / Lemlist** (optional, paid) — toggle on only if the user has a seat. Tell them honestly: Apollo API enrichment needs a paid plan; Lemlist has no free tier; ContactOut has no self-serve API.
 Seed each enabled service's credit row via `credits_seed` (poll the balance endpoint where available, e.g. Hunter `/v2/account`).
 
-### 5. Gmail OAuth
-Primary send channel. Walk the user through:
-1. Create a **Desktop-app** OAuth client in Google Cloud Console, download `credentials.json`.
-2. Keep the consent screen in **Testing** status, add their own Google account as a test user (no Google verification, no multi-week review).
-3. Run the local OAuth flow (the `gmail.get_credentials` path) — they click through the "Google hasn't verified this app" warning once. Token lands in the OS keychain.
-**Tell them the one catch:** Testing-mode refresh tokens expire ~weekly, so they'll re-auth occasionally. That's expected and safe. Offer **local Mail.app** (macOS, AppleScript, zero OAuth) as an alternative if they'd rather skip the Cloud Console step.
+### 5. Email sending (SMTP App Password — the simple default)
+The default send channel is SMTP with a Gmail **App Password** — works on Mac, Windows, and Linux, under Claude Code / Codex / anywhere, no OAuth, no token expiry. Walk the user through:
+1. Enable 2-Step Verification on their Google account (required for App Passwords).
+2. https://myaccount.google.com/apppasswords → create one named "job-hunter" → copy the 16-char password.
+3. Enter their Gmail address (`gmail_address`) and the App Password (`gmail_app_password`, stored sensitive). Done — `send_email` works.
+
+**Alternatives** (only if preferred): the OAuth `gmail` channel (Desktop credentials.json from Google Cloud Console; ~weekly re-auth), or `mailapp` on macOS (zero setup, local Mail.app). SMTP is recommended for everyone.
 
 ### 6. LinkedIn automation
 LinkedIn actions run through the bundled `linkedin` MCP server (auto-installed via `uvx`). First run, it opens a real browser session for the user to log into LinkedIn once — the session persists at `~/.linkedin-mcp/profile/`, no cookie copying. Confirm the user is okay with automated connection requests + DMs (both still pass the review gate), and set expectations on volume: keep it human-paced (~15-25 connects/day), not bulk — that's what keeps the account safe. Point them at `/job-hunter:watch` (or pairing it with `/loop`) for hands-off acceptance → DM.

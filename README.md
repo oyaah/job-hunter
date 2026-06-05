@@ -57,8 +57,13 @@ The bundled `linkedin` MCP server ([linkedin-scraper-mcp](https://github.com/sti
 ## Requirements
 
 - Python 3.10+, `pip install -r requirements.txt`
-- **Free + required:** Hunter.io API key, a Google account (Gmail send)
+- **Free + required:** Hunter.io API key; a Gmail address + [App Password](https://myaccount.google.com/apppasswords) for sending (SMTP — works on every OS, no OAuth)
+- **For LinkedIn automation:** `uv` (the bundled `linkedin` server runs via `uvx`)
 - **Optional (paid):** Apollo, ContactOut, Lemlist API keys
+
+## Portability
+
+Works under **Claude Code, Codex, and Codex terminal** — they all run the same `outreach-mcp` server; secrets come from `userConfig` (Claude) or plain env vars (Codex). The Claude **app** uses its own connectors and is a separate surface. Default email send (SMTP) and all enrichment are pure Python stdlib + `httpx`, so nothing is OS-specific except the optional macOS `mailapp` channel.
 
 ## License
 

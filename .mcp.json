@@ -9,6 +9,8 @@
         "APOLLO_API_KEY": "${user_config.apollo_api_key}",
         "CONTACTOUT_API_KEY": "${user_config.contactout_api_key}",
         "LEMLIST_API_KEY": "${user_config.lemlist_api_key}",
+        "GMAIL_ADDRESS": "${user_config.gmail_address}",
+        "GMAIL_APP_PASSWORD": "${user_config.gmail_app_password}",
         "GMAIL_TOKEN_PATH": "${user_config.gmail_token_path}",
         "GMAIL_CREDENTIALS_PATH": "${user_config.gmail_credentials_path}"
       }

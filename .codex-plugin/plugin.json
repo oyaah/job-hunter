@@ -1,7 +1,7 @@
 {
   "name": "job-hunter",
   "version": "0.1.0",
-  "description": "End-to-end job-hunt cold outreach automation. Codex manifest — real logic lives in the framework-agnostic outreach-mcp server; configure via env vars: HUNTER_API_KEY (required), APOLLO_API_KEY, CONTACTOUT_API_KEY, LEMLIST_API_KEY (optional paid), GMAIL_TOKEN_PATH, GMAIL_CREDENTIALS_PATH (Gmail send), LINKEDIN_LI_AT (optional poller). NOTE: the mailapp send channel is macOS-only; Gmail is the only cross-platform send path.",
+  "description": "End-to-end job-hunt cold outreach automation. Framework-agnostic: the outreach-mcp server runs identically under Claude Code, Codex, and Codex terminal. Configure via env vars: HUNTER_API_KEY (required), GMAIL_ADDRESS + GMAIL_APP_PASSWORD (default SMTP send — works on every OS), APOLLO_API_KEY/CONTACTOUT_API_KEY/LEMLIST_API_KEY (optional paid). LinkedIn actions use the bundled linkedin-scraper-mcp. mailapp channel is macOS-only; SMTP is the cross-platform default.",
   "skills": "./skills",
   "agents": "./agents",
   "mcpServers": "./.mcp.json"
