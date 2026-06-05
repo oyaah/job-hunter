@@ -266,6 +266,50 @@ def lemlist_push(message_id: int, campaign_id: str) -> dict:
     return {"message_id": message_id, "pushed_to": campaign_id}
 
 
+# ------------------------------------------------------------- LinkedIn (semi-auto)
+# The agent prepares + queues; the USER sends by hand. No tool here ever connects
+# or messages on LinkedIn (KTD6). These only track lifecycle + surface the DM.
+@mcp.tool()
+def linkedin_queue(contact_id: int, note: str = "", dm: str = "") -> dict:
+    """Queue an approved LinkedIn connection note (+ prepared DM) for the user to send
+    MANUALLY. Sets status QUEUED. Does not send anything."""
+    if note or dm:
+        state.upsert_linkedin(_conn, contact_id, note=note or None, dm=dm or None)
+    state.set_linkedin_status(_conn, contact_id, "QUEUED")
+    return {"contact_id": contact_id, "status": "QUEUED",
+            "action_required": "User: send this connection request in LinkedIn by hand."}
+
+
+@mcp.tool()
+def linkedin_sent(contact_id: int) -> dict:
+    """Mark that the USER has manually sent the queued connection request (QUEUED→SENT).
+    Now we wait for acceptance (manual signal or the opt-in poller)."""
+    state.set_linkedin_status(_conn, contact_id, "SENT")
+    return {"contact_id": contact_id, "status": "SENT"}
+
+
+@mcp.tool()
+def linkedin_accepted(contact_id: int) -> dict:
+    """Record that a connection was accepted (manual path or poller). Advances to
+    DM_REVIEW and returns the prepared DM so it can go through the review gate.
+    The user still sends the DM by hand."""
+    state.set_linkedin_status(_conn, contact_id, "ACCEPTED")
+    state.set_linkedin_status(_conn, contact_id, "DM_REVIEW")
+    li = _conn.execute("SELECT dm FROM linkedin WHERE contact_id=?", (contact_id,)).fetchone()
+    return {"contact_id": contact_id, "status": "DM_REVIEW",
+            "prepared_dm": li["dm"] if li else None,
+            "action_required": "Review the DM, then the user sends it in LinkedIn by hand."}
+
+
+@mcp.tool()
+def linkedin_awaiting() -> list:
+    """Contacts whose connection request is SENT and awaiting acceptance."""
+    rows = _conn.execute(
+        "SELECT c.id, c.name, c.company_slug, l.sent_at FROM contacts c "
+        "JOIN linkedin l ON l.contact_id=c.id WHERE l.status='SENT' ORDER BY l.sent_at").fetchall()
+    return [dict(r) for r in rows]
+
+
 # ----------------------------------------------------- self-evolving learnings
 @mcp.tool()
 def learning_record(category: str, insight: str, source: str = "explicit") -> dict:
