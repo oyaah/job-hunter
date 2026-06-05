@@ -1,0 +1,8 @@
+{
+  "name": "job-hunter",
+  "version": "0.1.0",
+  "description": "End-to-end job-hunt cold outreach automation. Codex manifest — real logic lives in the framework-agnostic outreach-mcp server; configure secrets via env vars (HUNTER_API_KEY, APOLLO_API_KEY, CONTACTOUT_API_KEY, LEMLIST_API_KEY, GMAIL_TOKEN_PATH).",
+  "skills": "./skills",
+  "agents": "./agents",
+  "mcpServers": "./.mcp.json"
+}

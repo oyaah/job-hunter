@@ -1,0 +1,24 @@
+# Secrets — never commit
+*.token.json
+gmail_token.json
+credentials.json
+.env
+.env.*
+
+# Local state / DB (lives in CLAUDE_PLUGIN_DATA at runtime; this is for local dev)
+*.db
+*.db-wal
+*.db-shm
+data/
+.job-hunter-data/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# OS
+.DS_Store

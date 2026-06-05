@@ -1,0 +1,10 @@
+{
+  "monitors": [
+    {
+      "name": "linkedin-acceptance-poller",
+      "command": "python3 ${CLAUDE_PLUGIN_ROOT}/servers/outreach-mcp/monitors/poll_invitations.py",
+      "description": "OPT-IN, read-only. Polls LinkedIn for accepted connection requests on a slow cadence and writes accepted events to state. Disabled unless the user explicitly opts in during setup. Never sends or acts.",
+      "enabled": false
+    }
+  ]
+}

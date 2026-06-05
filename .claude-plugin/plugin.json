@@ -1,0 +1,46 @@
+{
+  "name": "job-hunter",
+  "version": "0.1.0",
+  "description": "End-to-end job-hunt cold outreach: target the people who matter, enrich contacts, research them, draft voice-matched emails + LinkedIn DMs, review, and send — company after company, on the least tokens possible.",
+  "author": { "name": "oyaah" },
+  "homepage": "https://github.com/oyaah/job-hunter",
+  "repository": "https://github.com/oyaah/job-hunter",
+  "license": "MIT",
+  "defaultEnabled": false,
+  "skills": "./skills",
+  "agents": "./agents",
+  "hooks": "./hooks/hooks.json",
+  "mcpServers": "./.mcp.json",
+  "userConfig": {
+    "hunter_api_key": {
+      "type": "string",
+      "title": "Hunter.io API key",
+      "description": "From hunter.io/api-keys. Free tier = 50 credits/month with real API access. The default enrichment provider.",
+      "sensitive": true
+    },
+    "apollo_api_key": {
+      "type": "string",
+      "title": "Apollo.io API key (optional)",
+      "description": "From Apollo Settings → API. NOTE: programmatic enrichment requires a PAID Apollo plan. Leave blank to skip.",
+      "sensitive": true
+    },
+    "contactout_api_key": {
+      "type": "string",
+      "title": "ContactOut API token (optional)",
+      "description": "Paid, no self-serve key (request via sales). Last-resort enrichment fallback. Leave blank to skip.",
+      "sensitive": true
+    },
+    "lemlist_api_key": {
+      "type": "string",
+      "title": "Lemlist API key (optional)",
+      "description": "From Lemlist Settings → Integrations. No free tier. Enables sequenced sending. Leave blank to use Gmail only.",
+      "sensitive": true
+    },
+    "gmail_token_path": {
+      "type": "string",
+      "title": "Gmail OAuth token path",
+      "description": "Where the Gmail OAuth token is stored. Default: ~/.config/job-hunter/gmail_token.json (0600). Created by /job-hunter:setup.",
+      "sensitive": false
+    }
+  }
+}
