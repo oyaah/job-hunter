@@ -192,6 +192,80 @@ def verify_email(email: str) -> dict:
     return res
 
 
+# -------------------------------------------------------------- send tools
+# Safety rail #1 (CLAUDE.md): nothing sends unless the message is 'approved'.
+# Enforced here at the tool layer, not just in the review skill — defense in depth.
+def _gmail_creds_path():
+    return os.environ.get("GMAIL_CREDENTIALS_PATH") or \
+        os.path.expanduser("~/.config/job-hunter/credentials.json")
+
+
+def _require_approved(message_id):
+    row = _conn.execute("SELECT m.*, ct.email AS to_email FROM messages m "
+                        "JOIN contacts ct ON ct.id=m.contact_id WHERE m.id=?",
+                        (message_id,)).fetchone()
+    if not row:
+        return None, {"error": f"no message {message_id}"}
+    if row["status"] != "approved":
+        return None, {"error": f"message {message_id} is '{row['status']}', not 'approved'. "
+                               "Send blocked — it must clear the review gate first."}
+    return dict(row), None
+
+
+@mcp.tool()
+def gmail_draft(message_id: int) -> dict:
+    """Create a Gmail draft for an APPROVED message so the user sees the exact bytes
+    before it sends. Returns the draft id."""
+    msg, err = _require_approved(message_id)
+    if err:
+        return err
+    from integrations import gmail
+    draft_id = gmail.create_draft(msg["to_email"], msg["subject"] or "", msg["body"],
+                                  _gmail_creds_path())
+    return {"message_id": message_id, "gmail_draft_id": draft_id}
+
+
+@mcp.tool()
+def send_email(message_id: int, channel: str = "gmail") -> dict:
+    """Send an APPROVED email. channel = gmail (default) | mailapp (local macOS Mail,
+    zero-OAuth fallback). Marks the message 'sent'. Blocked unless approved."""
+    msg, err = _require_approved(message_id)
+    if err:
+        return err
+    try:
+        if channel == "mailapp":
+            from integrations import mailapp
+            mailapp.send(msg["to_email"], msg["subject"] or "", msg["body"])
+        else:
+            from integrations import gmail
+            gmail.send_message(msg["to_email"], msg["subject"] or "", msg["body"],
+                               _gmail_creds_path())
+    except Exception as e:  # noqa: BLE001
+        return {"status": "error", "detail": str(e),
+                "hint": "Gmail token may have expired (Testing-mode ~weekly). "
+                        "Re-run /job-hunter:setup, or retry with channel='mailapp'."}
+    state.set_message_status(_conn, message_id, "sent", sent=True)
+    return {"message_id": message_id, "status": "sent", "channel": channel}
+
+
+@mcp.tool()
+def lemlist_push(message_id: int, campaign_id: str) -> dict:
+    """Optional: push an APPROVED contact into an existing Lemlist campaign for sequenced
+    follow-up (paid; user must have a seat)."""
+    msg, err = _require_approved(message_id)
+    if err:
+        return err
+    contact = state.get_contact(_conn, msg["contact_id"])
+    from integrations import lemlist
+    try:
+        lemlist.add_lead(campaign_id, contact["email"], first_name=contact["name"].split()[0],
+                         job_title=contact.get("role"), linkedin_url=contact.get("linkedin_url"),
+                         phone=contact.get("phone"))
+    except Exception as e:  # noqa: BLE001
+        return {"status": "error", "detail": str(e)}
+    return {"message_id": message_id, "pushed_to": campaign_id}
+
+
 # ----------------------------------------------------- self-evolving learnings
 @mcp.tool()
 def learning_record(category: str, insight: str, source: str = "explicit") -> dict:
