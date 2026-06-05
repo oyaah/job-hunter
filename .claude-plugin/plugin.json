@@ -59,6 +59,12 @@
       "title": "Gmail OAuth client secret path (optional)",
       "description": "Only for the OAuth 'gmail' channel. Path to Desktop-app credentials.json. Most users use SMTP instead.",
       "sensitive": false
+    },
+    "linkedin_daily_cap": {
+      "type": "string",
+      "title": "LinkedIn daily action cap",
+      "description": "Max connection requests / DMs per day (safety rail against runaway loops). Default 40. Raise or lower to taste.",
+      "sensitive": false
     }
   }
 }

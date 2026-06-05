@@ -19,6 +19,7 @@ import enrichment  # noqa: E402
 import learnings  # noqa: E402
 import distill  # noqa: E402
 import voice  # noqa: E402
+import linkedin_adapter  # noqa: E402
 
 mcp = FastMCP("outreach")
 
@@ -356,11 +357,22 @@ def linkedin_queue(contact_id: int, note: str = "", dm: str = "") -> dict:
 
 
 @mcp.tool()
+def linkedin_guard(action: str = "connect") -> dict:
+    """Pre-flight rate guard — call BEFORE any mcp__linkedin__connect_with_person or
+    send_message. action = connect | message. Returns ok+remaining, or blocked+reason
+    when today's generous daily cap is hit. Never perform the action when ok is false."""
+    return linkedin_adapter.guard(_conn, action)
+
+
+@mcp.tool()
 def linkedin_sent(contact_id: int) -> dict:
     """Record that the connection request was sent (QUEUED→SENT) after the agent called
-    mcp__linkedin__connect_with_person. Now awaiting acceptance (the watch step checks)."""
+    mcp__linkedin__connect_with_person. Counts toward today's rate guard. Now awaiting
+    acceptance (the watch step checks)."""
     state.set_linkedin_status(_conn, contact_id, "SENT")
-    return {"contact_id": contact_id, "status": "SENT"}
+    linkedin_adapter.record(_conn, "connect")
+    return {"contact_id": contact_id, "status": "SENT",
+            "today": linkedin_adapter.used_today(_conn, "connect")}
 
 
 @mcp.tool()
@@ -378,8 +390,9 @@ def linkedin_accepted(contact_id: int) -> dict:
 @mcp.tool()
 def linkedin_dm_sent(contact_id: int) -> dict:
     """Record that the DM was sent (DM_REVIEW→DM_SENT) after the agent called
-    mcp__linkedin__send_message. Terminal state for this contact's LinkedIn track."""
+    mcp__linkedin__send_message. Counts toward today's message guard. Terminal state."""
     state.set_linkedin_status(_conn, contact_id, "DM_SENT")
+    linkedin_adapter.record(_conn, "message")
     return {"contact_id": contact_id, "status": "DM_SENT"}
 
 
