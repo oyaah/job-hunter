@@ -11,6 +11,7 @@ from mcp.server.fastmcp import FastMCP  # noqa: E402
 import store  # noqa: E402
 import state  # noqa: E402
 import credits  # noqa: E402
+import enrichment  # noqa: E402
 
 mcp = FastMCP("outreach")
 
@@ -152,6 +153,42 @@ def credits_mark_exhausted(service: str, account_id: str = "default", reset_at: 
 def credits_balances() -> list:
     """All credit rows — for the status board and SessionStart summary."""
     return credits.balances(_conn)
+
+
+# ----------------------------------------------------------- enrichment tools
+@mcp.tool()
+def enrich_contact(contact_id: int, domain: str) -> dict:
+    """Resolve a verified email/phone for a contact via the credit-gated chain
+    (Hunter→Apollo→ContactOut). `domain` is the company's email domain (e.g. acme.com).
+    On a verified hit the contact row is updated. Never returns a guessed address as verified."""
+    contact = state.get_contact(_conn, contact_id)
+    if not contact:
+        return {"error": f"no contact {contact_id}"}
+    res = enrichment.enrich(_conn, contact, domain)
+    if res["status"] in ("verified", "unverified"):
+        state.update_contact(
+            _conn, contact_id, email=res["email"],
+            email_status=("verified" if res["status"] == "verified" else "guessed"),
+            phone=res.get("phone") or "", enrichment_source=res.get("source") or "")
+    return res
+
+
+@mcp.tool()
+def verify_email(email: str) -> dict:
+    """Verify a single email's deliverability via Hunter (records 1 credit)."""
+    from integrations import hunter
+    pick = credits.pick_provider(_conn, "verify")
+    if not pick:
+        return {"status": "needs_credits"}
+    service, account = pick
+    try:
+        res = hunter.email_verifier(email)
+    except Exception as e:  # noqa: BLE001
+        if e.__class__.__name__ == "CreditError":
+            credits.mark_exhausted(_conn, service, account)
+        return {"status": "error", "detail": str(e)}
+    credits.record(_conn, service, account, "verify", 1)
+    return res
 
 
 if __name__ == "__main__":
