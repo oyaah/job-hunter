@@ -10,7 +10,8 @@ Write outreach that sounds like the user typed it in one sitting and didn't over
 
 ## Load first (this is the whole point)
 - The user's `voice-profile.md` — their identity line, differentiator, default register, sign-off, honesty guardrails, real toolkit.
-- `learnings_context` — everything the system has learned about how they like their outreach (cut the humor, shorter intros, lead with the war story, whatever). **This accumulated understanding shapes the draft.** It's why the writing gets more "them" over time.
+- `profile_get("voice")` — the **distilled** voice profile: the compact, durable principles the system has reflected out of all past feedback. Cheaper to carry than raw learnings and already curated. Load this first.
+- `learnings_context` — the most recent un-distilled signal on top of the distilled profile (cut the humor, shorter intros, lead with the war story). **Together these are why the writing gets more "them" over time.**
 - The contact's `research_digest` and `hook`.
 
 ## Write

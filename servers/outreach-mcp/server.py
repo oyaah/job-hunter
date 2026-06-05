@@ -13,6 +13,7 @@ import state  # noqa: E402
 import credits  # noqa: E402
 import enrichment  # noqa: E402
 import learnings  # noqa: E402
+import distill  # noqa: E402
 
 mcp = FastMCP("outreach")
 
@@ -332,6 +333,37 @@ def learnings_context() -> str:
     """All learnings rendered as a compact prompt block — the system's current
     understanding of the user, ready to inject before a decision."""
     return learnings.as_context(_conn)
+
+
+# -------------------------------------------- reflection / distillation (self-evolving)
+@mcp.tool()
+def reflection_due(category: str = "") -> dict:
+    """Check if enough new signal accumulated to distill it into a durable profile
+    (importance-sum threshold). Returns the material to compress if due. Cheap: the
+    model already in the loop does the distilling — no extra API call. Call this at
+    natural breaks (e.g. after a company in /hunt)."""
+    cat = category or None
+    due = distill.is_due(_conn, cat)
+    return {"due": due, "pending_weight": distill.pending_weight(_conn, cat),
+            "threshold": distill.THRESHOLD,
+            "material": distill.material(_conn, cat) if due else []}
+
+
+@mcp.tool()
+def reflection_apply(section: str, content: str) -> dict:
+    """Save the model's distilled principles as the compact profile for a section
+    (voice|targeting). Byte-capped (curate, not accumulate); marks that category's
+    pending learnings distilled so they don't re-trigger. Takes effect next load,
+    not mid-draft."""
+    return distill.apply(_conn, section, content)
+
+
+@mcp.tool()
+def profile_get(section: str) -> str:
+    """The current distilled profile for a section (voice|targeting). Load this
+    before drafting/targeting — it's the compressed, durable version of everything
+    learned, cheaper to carry than the raw learnings."""
+    return distill.get_profile(_conn, section)
 
 
 # ----------------------------------------------------- credit lifecycle (R11)

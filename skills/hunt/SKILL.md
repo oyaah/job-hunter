@@ -33,5 +33,7 @@ For each confirmed company, work it end to end, then move on:
 ## Resumable
 The loop is resumable — `state_get` and `pipeline_board` tell you what's done. If interrupted, re-running `hunt` continues from where the pipeline left off; skip companies already `sent`/`done`.
 
-## Keep learning
+## Keep learning (self-evolving)
 The whole point is that this gets more "yours" over time. Every correction at review, every rejected target, every stated preference → `learning_record`. Next run, it shows up in `learnings_context` and the drafts/targets arrive closer to right.
+
+At a natural break (after finishing a company), check `reflection_due("voice")` and `reflection_due("targeting")`. If due, run the `reflect` step: distill the raw learnings into the durable profile (`reflection_apply`). It's cheap — you do the distilling, no extra API call — and keeps the carried context compact instead of an ever-growing list. Effects apply next load, never mid-draft.

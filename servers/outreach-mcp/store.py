@@ -14,8 +14,19 @@ def connect(path):
         conn.execute("PRAGMA journal_mode = WAL")
     with open(SCHEMA_PATH) as f:
         conn.executescript(f.read())
+    _migrate(conn)
     conn.commit()
     return conn
+
+
+def _migrate(conn):
+    """Defensive column adds for DBs created before a schema bump (CREATE IF NOT
+    EXISTS won't alter an existing table). Each guarded — ignore 'duplicate column'."""
+    for table, col, decl in [("learnings", "distilled_at", "TEXT")]:
+        try:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {decl}")
+        except Exception:
+            pass
 
 
 def connect_default():

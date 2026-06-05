@@ -75,13 +75,23 @@ CREATE INDEX IF NOT EXISTS idx_messages_contact ON messages(contact_id);
 -- (from review edits, rejections, explicit guidance). Loaded before every
 -- drafting/targeting decision so the workflow tunes itself to the user.
 CREATE TABLE IF NOT EXISTS learnings (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    category    TEXT NOT NULL,          -- voice|targeting|enrichment|outreach|general
-    insight     TEXT NOT NULL,
-    weight      REAL NOT NULL DEFAULT 1.0,
-    source      TEXT,                   -- review-edit|rejection|approval|explicit
-    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
-    updated_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    category     TEXT NOT NULL,          -- voice|targeting|enrichment|outreach|general
+    insight      TEXT NOT NULL,
+    weight       REAL NOT NULL DEFAULT 1.0,
+    source       TEXT,                   -- review-edit|rejection|approval|explicit
+    distilled_at TEXT,                   -- set when folded into a profile; NULL = pending
+    created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at   TEXT NOT NULL DEFAULT (datetime('now')),
     UNIQUE(category, insight)
 );
 CREATE INDEX IF NOT EXISTS idx_learnings_cat ON learnings(category);
+
+-- Distilled profiles: compact, durable principles the system reflects out of raw
+-- learnings (Generative-Agents importance-threshold + Hermes patch-not-rewrite).
+-- Byte-capped so they curate instead of growing forever. Loaded before drafting.
+CREATE TABLE IF NOT EXISTS profiles (
+    section     TEXT PRIMARY KEY,        -- voice|targeting
+    content     TEXT NOT NULL DEFAULT '',
+    updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);

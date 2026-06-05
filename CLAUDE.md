@@ -19,8 +19,9 @@ The workflow **tunes itself to the user** instead of being hard-coded to anyone 
 
 - The `learnings` store (MCP: `learning_record`, `learnings_get`, `learnings_context`) is the memory. It captures what the system learns about *this* user — from review edits, rejections, approvals, and explicit guidance.
 - **The review gate is the primary learning moment.** When the user edits a draft, the *diff* is a lesson ("they cut the humor line", "they always shorten the intro"). When they reject a target, that's a targeting lesson. Record it.
-- **Load before you decide.** Every agent that targets or drafts reads `learnings_context` first, so accumulated understanding shapes the next action. Repeats reinforce (weight climbs); the strongest signals lead.
-- Over time the voice profile, targeting filters, and outreach style should drift toward what actually gets *this user* replies — without anyone editing code.
+- **Load before you decide.** Every agent that targets or drafts reads the distilled `profile_get(...)` + recent `learnings_context` first, so accumulated understanding shapes the next action. Repeats reinforce (weight climbs); the strongest signals lead.
+- **Reflection (the self-evolving step).** Raw learnings get noisy. When accumulated signal crosses a threshold (sum of un-distilled `weight` ≥ `THRESHOLD` — Generative-Agents importance-trigger, not time/count polling), the `reflect` step distills them into a compact, **byte-capped** voice/targeting profile (Hermes/SkillOpt patch-not-rewrite). **The model already in the loop does the distilling — no extra LLM API call.** Distilled learnings are flagged (kept as audit trail), effects apply next load (not mid-draft, so no drift). This is `distill.py` + `reflection_due`/`reflection_apply`/`profile_get`.
+- Over time the voice profile, targeting filters, and outreach style drift toward what actually gets *this user* replies — without anyone editing code.
 
 ### 3. Least tokens, most capability
 Model-power-dependent, not prompt-bloated.
