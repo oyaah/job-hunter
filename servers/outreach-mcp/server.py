@@ -24,8 +24,10 @@ import voice  # noqa: E402
 
 mcp = FastMCP("outreach")
 
-# One shared connection for the process. State lives in $DATA_DIR/job-hunter.db.
-_conn = store.connect_default()
+# Thread-local connection proxy: each FastMCP worker thread gets its own SQLite
+# connection to the same WAL DB (the correct concurrency model). State lives in
+# $DATA_DIR/job-hunter.db.
+_conn = store.thread_local_default()
 
 
 # ---------------------------------------------------------------- state tools
