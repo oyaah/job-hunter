@@ -1,16 +1,14 @@
 """outreach-mcp — FastMCP server. All job-hunter state, credit, and (later)
 integration tools live here. Thin skills + worker agents call these tools;
 the heavy logic stays server-side to keep agent context lean (KTD1)."""
-import logging
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-# Hunter takes its key as a URL query param; keep httpx from logging request URLs
-# (which would leak the API key to stdout/logs).
-logging.getLogger("httpx").setLevel(logging.WARNING)
-logging.getLogger("httpcore").setLevel(logging.WARNING)
+import resilience  # noqa: E402
+
+resilience.configure_logging()  # redact secrets, quiet httpx URL logging
 
 from mcp.server.fastmcp import FastMCP  # noqa: E402
 
@@ -21,11 +19,14 @@ import enrichment  # noqa: E402
 import learnings  # noqa: E402
 import distill  # noqa: E402
 import voice  # noqa: E402
+import linkedin_adapter  # noqa: E402
 
 mcp = FastMCP("outreach")
 
-# One shared connection for the process. State lives in $DATA_DIR/job-hunter.db.
-_conn = store.connect_default()
+# Thread-local connection proxy: each FastMCP worker thread gets its own SQLite
+# connection to the same WAL DB (the correct concurrency model). State lives in
+# $DATA_DIR/job-hunter.db.
+_conn = store.thread_local_default()
 
 
 # ---------------------------------------------------------------- state tools
@@ -356,11 +357,22 @@ def linkedin_queue(contact_id: int, note: str = "", dm: str = "") -> dict:
 
 
 @mcp.tool()
+def linkedin_guard(action: str = "connect") -> dict:
+    """Pre-flight rate guard — call BEFORE any mcp__linkedin__connect_with_person or
+    send_message. action = connect | message. Returns ok+remaining, or blocked+reason
+    when today's generous daily cap is hit. Never perform the action when ok is false."""
+    return linkedin_adapter.guard(_conn, action)
+
+
+@mcp.tool()
 def linkedin_sent(contact_id: int) -> dict:
     """Record that the connection request was sent (QUEUED→SENT) after the agent called
-    mcp__linkedin__connect_with_person. Now awaiting acceptance (the watch step checks)."""
+    mcp__linkedin__connect_with_person. Counts toward today's rate guard. Now awaiting
+    acceptance (the watch step checks)."""
     state.set_linkedin_status(_conn, contact_id, "SENT")
-    return {"contact_id": contact_id, "status": "SENT"}
+    linkedin_adapter.record(_conn, "connect")
+    return {"contact_id": contact_id, "status": "SENT",
+            "today": linkedin_adapter.used_today(_conn, "connect")}
 
 
 @mcp.tool()
@@ -378,8 +390,9 @@ def linkedin_accepted(contact_id: int) -> dict:
 @mcp.tool()
 def linkedin_dm_sent(contact_id: int) -> dict:
     """Record that the DM was sent (DM_REVIEW→DM_SENT) after the agent called
-    mcp__linkedin__send_message. Terminal state for this contact's LinkedIn track."""
+    mcp__linkedin__send_message. Counts toward today's message guard. Terminal state."""
     state.set_linkedin_status(_conn, contact_id, "DM_SENT")
+    linkedin_adapter.record(_conn, "message")
     return {"contact_id": contact_id, "status": "DM_SENT"}
 
 
@@ -480,6 +493,39 @@ def credits_add_account(service: str, account_id: str, remaining: int = 0,
     return {"service": service, "account_id": account_id, "registered": True,
             "warning": "Rotating free accounts to extend credits violates most providers' "
                        "Terms of Service. Use a paid plan for sustained volume."}
+
+
+# ---------------------------------------------------------------------- health
+@mcp.tool()
+def health() -> dict:
+    """At-a-glance readiness: DB writable, which credentials are configured (names
+    only, never values), and which send channels are available. Run when something
+    seems misconfigured. Surfaces no secrets."""
+    out = {"db": "unknown", "credentials": {}, "email_channels": []}
+    try:
+        _conn.execute("SELECT 1")
+        out["db"] = "ok"
+    except Exception as e:  # noqa: BLE001
+        out["db"] = f"error: {e.__class__.__name__}"
+    out["credentials"] = {
+        "hunter": bool(os.environ.get("HUNTER_API_KEY")),
+        "apollo": bool(os.environ.get("APOLLO_API_KEY")),
+        "contactout": bool(os.environ.get("CONTACTOUT_API_KEY")),
+        "lemlist": bool(os.environ.get("LEMLIST_API_KEY")),
+    }
+    try:
+        from integrations import smtp_send, mailapp
+        if smtp_send.configured():
+            out["email_channels"].append("smtp")
+        if mailapp.available():
+            out["email_channels"].append("mailapp")
+        if os.environ.get("GMAIL_CREDENTIALS_PATH") or os.path.exists(
+                os.path.expanduser("~/.config/job-hunter/credentials.json")):
+            out["email_channels"].append("gmail-oauth")
+    except Exception:  # noqa: BLE001
+        pass
+    out["ready_to_send"] = bool(out["email_channels"])
+    return out
 
 
 if __name__ == "__main__":

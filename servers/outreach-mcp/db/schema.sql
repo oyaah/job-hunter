@@ -95,3 +95,12 @@ CREATE TABLE IF NOT EXISTS profiles (
     content     TEXT NOT NULL DEFAULT '',
     updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- Daily LinkedIn action counter for the rate guard (generous, configurable).
+-- One row per (day, action); reset is implicit (new day = new row).
+CREATE TABLE IF NOT EXISTS li_actions (
+    day     TEXT NOT NULL,            -- local date YYYY-MM-DD
+    action  TEXT NOT NULL,            -- connect|message
+    count   INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (day, action)
+);

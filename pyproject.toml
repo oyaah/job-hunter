@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "job-hunter-mcp"
+version = "0.2.0"
+description = "outreach-mcp server for the job-hunter plugin: enrichment, voice-matched drafting, email send, LinkedIn lifecycle, and a self-evolving learnings layer."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+authors = [{ name = "oyaah" }]
+dependencies = [
+    "mcp>=1.2.0",
+    "httpx>=0.27",
+    "keyring>=25.0",
+    "google-auth>=2.30",
+    "google-auth-oauthlib>=1.2",
+    "google-api-python-client>=2.130",
+]
+
+[project.urls]
+Homepage = "https://github.com/oyaah/job-hunter"
+Repository = "https://github.com/oyaah/job-hunter"
+
+# Console entry so the server launches via `uvx job-hunter-mcp`.
+# NOTE: the server modules currently live in a flat layout under
+# servers/outreach-mcp/. The remaining packaging step (tracked in SPEC.md §9)
+# is to move them into an importable `outreach_mcp` package with relative
+# imports and ship db/schema.sql as package data, then point this entry at
+# `outreach_mcp.server:main`.
+[project.scripts]
+job-hunter-mcp = "outreach_mcp.server:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

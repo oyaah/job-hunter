@@ -16,12 +16,17 @@ def _key():
 
 def _get(path, params):
     import httpx
+    import resilience
     params = dict(params, api_key=_key())
-    r = httpx.get(f"{BASE}{path}", params=params, timeout=20)
-    if r.status_code in (402, 429):
-        raise CreditError(f"hunter {r.status_code}")
-    r.raise_for_status()
-    return r.json().get("data", {})
+
+    def call():
+        r = httpx.get(f"{BASE}{path}", params=params, timeout=20)
+        if r.status_code == 402:
+            raise CreditError("hunter 402 (out of credits)")
+        r.raise_for_status()  # 429/5xx raise -> retried by resilience.retry
+        return r.json().get("data", {})
+
+    return resilience.retry(call)
 
 
 def email_finder(domain, first_name, last_name):
