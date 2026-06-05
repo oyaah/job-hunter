@@ -1,8 +1,10 @@
 {
   "name": "job-hunter",
-  "version": "0.1.0",
-  "description": "End-to-end job-hunt cold outreach: target the people who matter, enrich contacts, research them, draft voice-matched emails + LinkedIn DMs, review, and send — company after company, on the least tokens possible.",
-  "author": { "name": "oyaah" },
+  "version": "0.2.0",
+  "description": "End-to-end job-hunt cold outreach: target the people who matter, enrich contacts, research them, draft voice-matched emails + LinkedIn DMs, review, and send \u2014 company after company, on the least tokens possible.",
+  "author": {
+    "name": "oyaah"
+  },
   "homepage": "https://github.com/oyaah/job-hunter",
   "repository": "https://github.com/oyaah/job-hunter",
   "license": "MIT",
@@ -21,7 +23,7 @@
     "apollo_api_key": {
       "type": "string",
       "title": "Apollo.io API key (optional)",
-      "description": "From Apollo Settings → API. NOTE: programmatic enrichment requires a PAID Apollo plan. Leave blank to skip.",
+      "description": "From Apollo Settings \u2192 API. NOTE: programmatic enrichment requires a PAID Apollo plan. Leave blank to skip.",
       "sensitive": true
     },
     "contactout_api_key": {
@@ -33,7 +35,7 @@
     "lemlist_api_key": {
       "type": "string",
       "title": "Lemlist API key (optional)",
-      "description": "From Lemlist Settings → Integrations. No free tier. Enables sequenced sending. Leave blank to use Gmail only.",
+      "description": "From Lemlist Settings \u2192 Integrations. No free tier. Enables sequenced sending. Leave blank to use Gmail only.",
       "sensitive": true
     },
     "gmail_address": {
@@ -45,7 +47,7 @@
     "gmail_app_password": {
       "type": "string",
       "title": "Gmail App Password",
-      "description": "16-char App Password (NOT your login password). Enable 2FA, then myaccount.google.com/apppasswords. The simplest cross-platform send path — no OAuth.",
+      "description": "16-char App Password (NOT your login password). Enable 2FA, then myaccount.google.com/apppasswords. The simplest cross-platform send path \u2014 no OAuth.",
       "sensitive": true
     },
     "gmail_token_path": {
