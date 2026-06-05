@@ -64,7 +64,7 @@ monitors/    opt-in read-only LinkedIn acceptance poller (disabled by default)
 ## Safety rails (the few hard constraints)
 
 1. **No email leaves without explicit human approval.** The review gate is a real gate.
-2. **LinkedIn is never automated.** The agent drafts and queues; the user clicks Send. The acceptance poller is read-only and opt-in. Programmatic connect/message violates LinkedIn ToS.
+2. **LinkedIn is automated, but gated and human-paced.** Connection requests and DMs are sent through the bundled `linkedin` MCP server (`mcp__linkedin__connect_with_person` / `send_message`). The connection note + DM still pass the review gate before they go, and DMs are reviewed again after acceptance. Keep volume human-paced (~15-25 connects/day) — LinkedIn tolerates normal activity, not bulk blasting. This is a deliberate reversal of the original semi-auto design, at the user's request; the review gates are what keep it safe.
 3. **Never invent an email address.** Gate sends on a `verified` enrichment result; a guessed pattern is a hypothesis, surfaced as such.
 4. **Anti-AI voice lint is non-negotiable** (em/en-dashes, banned openers/words) — on top of the user's learned voice.
 5. **Credit honesty.** Don't fire doomed API calls; tell the user plainly when a provider is exhausted and offer pay/switch/rotate. Account rotation for free credits is flagged as ToS-violating, never silent.

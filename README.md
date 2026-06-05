@@ -16,11 +16,11 @@ onboard → target → enrich → research → draft → REVIEW → send → que
 - **Draft** — cold email + LinkedIn note + DM in *your* voice (learned from your samples), anti-AI lint enforced.
 - **Review** — nothing sends without your explicit approval. Approve / edit / reject.
 - **Send** — Gmail API (primary) or local Mail.app; Lemlist sequences optional.
-- **LinkedIn** — semi-auto: the agent drafts + queues, **you click send** (zero ban risk). Acceptance is detected (opt-in read-only poll) or you tell it; then the DM surfaces for review.
+- **LinkedIn** — automated via the bundled [linkedin-mcp-server](https://github.com/stickerdaniel/linkedin-mcp-server): the agent sends the connection request, the `watch` step detects acceptance, then drafts the DM, you review it, and it's sent automatically.
 
 ## Safety posture
 
-- **LinkedIn is never automated.** The agent prepares; you act. Programmatic connect/message violates LinkedIn ToS.
+- **LinkedIn is automated but gated and human-paced.** The connection note and DM both pass a review gate before sending; keep volume sane (~15-25 connects/day), not bulk.
 - **Every email is human-reviewed** before it leaves your account.
 - **Secrets live in the OS keychain / env**, never in this repo or git.
 
@@ -49,7 +49,10 @@ pip install -r requirements.txt
 | `/job-hunter:target` | Build / refine the company + people shortlist |
 | `/job-hunter:draft` | Draft a voice-matched email + LinkedIn note + DM |
 | `/job-hunter:review` | Approve / edit / reject pending messages before send |
+| `/job-hunter:watch` | Watchdog: detect LinkedIn acceptances, then draft + review + send the DM |
 | `/job-hunter:status` | Pipeline board + credit balances |
+
+The bundled `linkedin` MCP server ([linkedin-scraper-mcp](https://github.com/stickerdaniel/linkedin-mcp-server)) runs via `uvx` and performs the actual LinkedIn connect/message actions; first run opens a browser to log in once.
 
 ## Requirements
 

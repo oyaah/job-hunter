@@ -33,8 +33,8 @@ Primary send channel. Walk the user through:
 3. Run the local OAuth flow (the `gmail.get_credentials` path) — they click through the "Google hasn't verified this app" warning once. Token lands in the OS keychain.
 **Tell them the one catch:** Testing-mode refresh tokens expire ~weekly, so they'll re-auth occasionally. That's expected and safe. Offer **local Mail.app** (macOS, AppleScript, zero OAuth) as an alternative if they'd rather skip the Cloud Console step.
 
-### 6. LinkedIn posture
-Confirm the safe default: **the agent drafts and queues LinkedIn notes + DMs; the user clicks Send.** Ask whether to enable the optional read-only acceptance poller (off by default) — explain it polls slowly and never acts, but is still unofficial-API and best left off unless they want hands-off acceptance detection.
+### 6. LinkedIn automation
+LinkedIn actions run through the bundled `linkedin` MCP server (auto-installed via `uvx`). First run, it opens a real browser session for the user to log into LinkedIn once — the session persists at `~/.linkedin-mcp/profile/`, no cookie copying. Confirm the user is okay with automated connection requests + DMs (both still pass the review gate), and set expectations on volume: keep it human-paced (~15-25 connects/day), not bulk — that's what keeps the account safe. Point them at `/job-hunter:watch` (or pairing it with `/loop`) for hands-off acceptance → DM.
 
 ## Done
 Summarize what's configured (profile ✓, prefs ✓, voice ✓, which providers, Gmail/Mail.app, LinkedIn posture) and the next step: `/job-hunter:hunt` with a company list.

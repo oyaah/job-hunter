@@ -10,9 +10,13 @@
         "CONTACTOUT_API_KEY": "${user_config.contactout_api_key}",
         "LEMLIST_API_KEY": "${user_config.lemlist_api_key}",
         "GMAIL_TOKEN_PATH": "${user_config.gmail_token_path}",
-        "GMAIL_CREDENTIALS_PATH": "${user_config.gmail_credentials_path}",
-        "LINKEDIN_LI_AT": "${user_config.linkedin_li_at}"
+        "GMAIL_CREDENTIALS_PATH": "${user_config.gmail_credentials_path}"
       }
+    },
+    "linkedin": {
+      "command": "uvx",
+      "args": ["linkedin-scraper-mcp@latest"],
+      "env": { "UV_HTTP_TIMEOUT": "300" }
     }
   }
 }

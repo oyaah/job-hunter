@@ -14,7 +14,9 @@ You are a capable model. This skill gives you the goal, the loop shape, and the 
 2. Load the static context ONCE: the user's `profile.md`, `targeting-prefs.md`, `voice-profile.md`, and `learnings_context`. This is cached for the session; don't reload per company.
 
 ## The loop (per company)
-Work one company end to end, then move to the next. `state_get` loads just that company; the worker agents do the heavy lifting in isolation and hand back compact digests. The arc: find the people who matter (`target-scout`) → get verified contact info (`contact-enricher`) → understand the top person (`person-researcher`) → draft voice-matched outreach (`message-writer`) → review gate → on approval, send the email and queue the LinkedIn note + DM for the user to send by hand → mark the company done.
+Work one company end to end, then move to the next. `state_get` loads just that company; the worker agents do the heavy lifting in isolation and hand back compact digests. The arc: find the people who matter (`target-scout`) → get verified contact info (`contact-enricher`) → understand the top person (`person-researcher`) → draft voice-matched outreach (`message-writer`) → review gate → on approval, send the email (`send_email`) and send the LinkedIn connection request via `mcp__linkedin__connect_with_person` (then `linkedin_sent`) → mark the company done.
+
+The LinkedIn DM is not sent now — it's prepared and waits for the connection to be accepted. The `watch` step (run it periodically, or pair with `/loop`) detects acceptances and runs DM draft → review → auto-send. Keep LinkedIn volume human-paced (~15-25 connects/day), not bulk.
 
 You know how to sequence this. Adapt to what each company gives you — skip steps that are already done, dig deeper where it matters. The worker agents and tools are there; use them as the situation calls for.
 

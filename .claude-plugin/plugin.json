@@ -47,12 +47,6 @@
       "title": "Gmail OAuth client secret path",
       "description": "Path to the Desktop-app credentials.json downloaded from Google Cloud Console. Default: ~/.config/job-hunter/credentials.json.",
       "sensitive": false
-    },
-    "linkedin_li_at": {
-      "type": "string",
-      "title": "LinkedIn li_at cookie (optional)",
-      "description": "Session cookie for the OPT-IN read-only acceptance poller only. Browser DevTools -> Application -> Cookies -> linkedin.com -> li_at. Leave blank to use the manual 'I got connected' path. Session credential — expires periodically.",
-      "sensitive": true
     }
   }
 }
