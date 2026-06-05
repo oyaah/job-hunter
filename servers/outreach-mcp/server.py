@@ -14,6 +14,7 @@ import credits  # noqa: E402
 import enrichment  # noqa: E402
 import learnings  # noqa: E402
 import distill  # noqa: E402
+import voice  # noqa: E402
 
 mcp = FastMCP("outreach")
 
@@ -70,7 +71,13 @@ def update_contact(contact_id: int, email: str = "", email_status: str = "",
 
 @mcp.tool()
 def add_message(contact_id: int, channel: str, body: str, subject: str = "") -> dict:
-    """Store a draft message (channel = email|li_note|li_dm). Status starts 'draft'."""
+    """Store a draft message (channel = email|li_note|li_dm). Status starts 'draft'.
+    Safety rail: the anti-AI voice lint runs here — a body with em/en-dashes or banned
+    AI cadence is rejected (not stored) so the rail can't be bypassed by skipping a skill."""
+    violations = voice.lint(body)
+    if violations:
+        return {"error": "voice lint failed — rewrite before storing.",
+                "violations": violations}
     mid = state.add_message(_conn, contact_id, channel, body, subject=subject or None)
     return {"message_id": mid, "status": "draft"}
 
@@ -166,6 +173,11 @@ def enrich_contact(contact_id: int, domain: str) -> dict:
     contact = state.get_contact(_conn, contact_id)
     if not contact:
         return {"error": f"no contact {contact_id}"}
+    # Don't re-enrich (or downgrade) a contact that already has a verified email.
+    if contact.get("email_status") == "verified":
+        return {"status": "verified", "email": contact["email"],
+                "phone": contact.get("phone"), "source": contact.get("enrichment_source"),
+                "note": "already verified — skipped re-enrichment"}
     res = enrichment.enrich(_conn, contact, domain)
     if res["status"] in ("verified", "unverified"):
         state.update_contact(
@@ -220,19 +232,46 @@ def gmail_draft(message_id: int) -> dict:
     msg, err = _require_approved(message_id)
     if err:
         return err
-    from integrations import gmail
-    draft_id = gmail.create_draft(msg["to_email"], msg["subject"] or "", msg["body"],
-                                  _gmail_creds_path())
+    if not msg["to_email"]:
+        return {"error": f"message {message_id} has no contact email — enrich first."}
+    try:
+        from integrations import gmail
+        draft_id = gmail.create_draft(msg["to_email"], msg["subject"] or "", msg["body"],
+                                      _gmail_creds_path())
+    except Exception as e:  # noqa: BLE001
+        return {"status": "error", "detail": str(e),
+                "hint": "Gmail auth may have expired (Testing-mode ~weekly). Re-run /job-hunter:setup."}
     return {"message_id": message_id, "gmail_draft_id": draft_id}
+
+
+def _claim_for_send(message_id):
+    """Atomically transition approved -> sending so two concurrent calls can't both
+    send (race) and a crash mid-send can't leave it resendable. Returns the row or None."""
+    cur = _conn.execute(
+        "UPDATE messages SET status='sending' WHERE id=? AND status='approved'", (message_id,))
+    _conn.commit()
+    if cur.rowcount == 0:
+        return None
+    row = _conn.execute("SELECT m.*, ct.email AS to_email FROM messages m "
+                        "JOIN contacts ct ON ct.id=m.contact_id WHERE m.id=?",
+                        (message_id,)).fetchone()
+    return dict(row) if row else None
 
 
 @mcp.tool()
 def send_email(message_id: int, channel: str = "gmail") -> dict:
     """Send an APPROVED email. channel = gmail (default) | mailapp (local macOS Mail,
-    zero-OAuth fallback). Marks the message 'sent'. Blocked unless approved."""
-    msg, err = _require_approved(message_id)
-    if err:
-        return err
+    zero-OAuth fallback). Atomically claims the message before sending so it can't
+    double-send; marks 'sent' on success, reverts to 'approved' on failure."""
+    msg = _claim_for_send(message_id)
+    if msg is None:
+        row = _conn.execute("SELECT status FROM messages WHERE id=?", (message_id,)).fetchone()
+        cur = row["status"] if row else "missing"
+        return {"error": f"message {message_id} not sendable (status='{cur}'). It must be "
+                         f"'approved' and not already sending/sent."}
+    if not msg["to_email"]:
+        state.set_message_status(_conn, message_id, "approved")  # release claim
+        return {"error": f"message {message_id} has no contact email — enrich first."}
     try:
         if channel == "mailapp":
             from integrations import mailapp
@@ -242,6 +281,7 @@ def send_email(message_id: int, channel: str = "gmail") -> dict:
             gmail.send_message(msg["to_email"], msg["subject"] or "", msg["body"],
                                _gmail_creds_path())
     except Exception as e:  # noqa: BLE001
+        state.set_message_status(_conn, message_id, "approved")  # revert claim, allow retry
         return {"status": "error", "detail": str(e),
                 "hint": "Gmail token may have expired (Testing-mode ~weekly). "
                         "Re-run /job-hunter:setup, or retry with channel='mailapp'."}
@@ -257,14 +297,18 @@ def lemlist_push(message_id: int, campaign_id: str) -> dict:
     if err:
         return err
     contact = state.get_contact(_conn, msg["contact_id"])
-    from integrations import lemlist
+    from integrations import lemlist, CreditError
     try:
         lemlist.add_lead(campaign_id, contact["email"], first_name=contact["name"].split()[0],
                          job_title=contact.get("role"), linkedin_url=contact.get("linkedin_url"),
                          phone=contact.get("phone"))
+    except CreditError:
+        credits.mark_exhausted(_conn, "lemlist", "default")
+        return {"status": "needs_credits", "detail": "Lemlist credits exhausted."}
     except Exception as e:  # noqa: BLE001
         return {"status": "error", "detail": str(e)}
-    return {"message_id": message_id, "pushed_to": campaign_id}
+    state.set_message_status(_conn, message_id, "sent", sent=True)
+    return {"message_id": message_id, "pushed_to": campaign_id, "status": "sent"}
 
 
 # ------------------------------------------------------------- LinkedIn (semi-auto)

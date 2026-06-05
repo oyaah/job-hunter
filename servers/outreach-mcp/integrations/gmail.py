@@ -87,10 +87,16 @@ def _service(client_secret_path, interactive=True):
     return build("gmail", "v1", credentials=creds)
 
 
+def _hdr(value):
+    # Strip CR/LF so a crafted to/subject can't inject extra headers (the stdlib
+    # also guards this; belt and suspenders).
+    return (value or "").replace("\r", " ").replace("\n", " ")
+
+
 def _raw(to, subject, body):
-    msg = MIMEText(body)
-    msg["to"] = to
-    msg["subject"] = subject
+    msg = MIMEText(body, _charset="utf-8")  # handle non-ASCII bodies, not just us-ascii
+    msg["to"] = _hdr(to)
+    msg["subject"] = _hdr(subject)
     return base64.urlsafe_b64encode(msg.as_bytes()).decode()
 
 

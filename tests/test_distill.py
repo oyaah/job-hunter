@@ -57,6 +57,27 @@ def test_apply_only_marks_its_category():
     assert distill.pending_weight(conn, "targeting") == 5.0  # untouched
 
 
+def test_single_overcap_line_does_not_blank_profile():
+    conn = fresh()
+    learnings.record(conn, "voice", "x", weight=12.0)
+    one_long_line = "p " + "x" * (distill.PROFILE_CAP + 500)  # no newline, > cap
+    res = distill.apply(conn, "voice", one_long_line)
+    prof = distill.get_profile(conn, "voice")
+    assert prof != ""  # data-loss guard: byte-sliced, not blanked
+    assert len(prof.encode()) <= distill.PROFILE_CAP
+    assert distill.pending_weight(conn, "voice") == 0  # still marked distilled
+
+
+def test_empty_content_keeps_profile_and_learnings():
+    conn = fresh()
+    distill.apply(conn, "voice", "good principle")
+    learnings.record(conn, "voice", "new signal", weight=12.0)
+    res = distill.apply(conn, "voice", "   ")  # empty after strip
+    assert res.get("kept_existing")
+    assert distill.get_profile(conn, "voice") == "good principle"  # not blanked
+    assert distill.pending_weight(conn, "voice") == 12.0  # learnings NOT retired
+
+
 def test_profile_roundtrip():
     conn = fresh()
     distill.apply(conn, "voice", "lead with the war story")

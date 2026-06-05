@@ -71,11 +71,8 @@ def enrich(conn, contact, domain):
       {status:'needs_credits', detail}       # every provider exhausted/uncredited
       {status:'no_match'}                    # providers ran but found nothing
     """
-    from integrations.hunter import CreditError as HunterCE
-    try:
-        from integrations.apollo import CreditError as ApolloCE
-    except Exception:
-        ApolloCE = HunterCE
+    import sys
+    from integrations import CreditError
 
     best_guess = None
     ran_any = False
@@ -90,10 +87,14 @@ def enrich(conn, contact, domain):
         any_credits = True
         try:
             result = _ADAPTERS[service](contact, domain)
-        except (HunterCE, ApolloCE, Exception) as e:  # noqa: BLE001
-            # CreditError → mark exhausted and advance; other errors → skip provider
-            if e.__class__.__name__ == "CreditError":
-                credits.mark_exhausted(conn, service, account)
+        except CreditError:
+            # Exhaustion → mark this account exhausted and advance the chain.
+            credits.mark_exhausted(conn, service, account)
+            continue
+        except Exception as e:  # noqa: BLE001
+            # A real provider/transport error (timeout, bad response, config). Skip
+            # this provider but make the failure visible — never silently no_match.
+            print(f"[job-hunter] enrich via {service} failed: {e!r}", file=sys.stderr)
             continue
         ran_any = True
         credits.record(conn, service, account, "email_find", cost, contact.get("id"))

@@ -4,11 +4,9 @@ into a campaign the user already built. Basic auth: blank username, API key as
 password. httpx lazy."""
 import os
 
+from ._base import CreditError  # noqa: F401
+
 BASE = "https://api.lemlist.com/api"
-
-
-class CreditError(Exception):
-    pass
 
 
 def _auth():

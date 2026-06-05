@@ -3,11 +3,9 @@ calls: api_search (no credits, IDs only) then people/match (costs credits, retur
 email/phone). Gate sends on email_status == 'verified'. httpx lazy."""
 import os
 
+from ._base import CreditError  # noqa: F401
+
 BASE = "https://api.apollo.io/api/v1"
-
-
-class CreditError(Exception):
-    pass
 
 
 def _headers():

@@ -71,8 +71,7 @@ def test_all_exhausted_needs_credits(monkeypatch):
 
 
 def test_credit_error_marks_exhausted_and_advances(monkeypatch):
-    class CreditError(Exception):
-        pass
+    from integrations import CreditError
 
     def hunter(c, d):
         raise CreditError("429")

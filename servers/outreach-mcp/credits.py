@@ -55,7 +55,7 @@ def record(conn, service, account_id, op, cost, contact_id=None):
     cur = check(conn, service, account_id)
     if cur is None:
         raise ValueError(f"no credit row for {service}/{account_id}")
-    remaining = cur["remaining"] - cost
+    remaining = max(0, cur["remaining"] - cost)  # floor at 0 — never strand below cost
     status = _recompute_status(remaining, cur["monthly_quota"])
     conn.execute(
         "UPDATE credits SET remaining=?, status=?, last_checked=datetime('now') "

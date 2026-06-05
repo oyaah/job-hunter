@@ -2,11 +2,9 @@
 endpoint). Auth via ?api_key=. httpx imported lazily."""
 import os
 
+from ._base import CreditError  # noqa: F401  (re-exported for callers)
+
 BASE = "https://api.hunter.io/v2"
-
-
-class CreditError(Exception):
-    """Provider signalled exhaustion (402/429)."""
 
 
 def _key():

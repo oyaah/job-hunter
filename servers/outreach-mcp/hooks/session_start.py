@@ -11,12 +11,16 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 def main():
     try:
-        import store
-        import state
-        import credits
-        conn = store.connect_default()
+        _build_and_print()
     except Exception:
-        return  # never block a session on the hook
+        return  # never block a session on the hook — any failure is silent
+
+
+def _build_and_print():
+    import store
+    import state
+    import credits
+    conn = store.connect_default()
 
     lines = []
 

@@ -44,3 +44,20 @@ def test_approved_message_passes_gate():
 def test_missing_message():
     _, err = server._require_approved(99999)
     assert "no message" in err["error"]
+
+
+def test_send_claim_is_atomic_single_winner():
+    mid = _make_message("approved")
+    first = server._claim_for_send(mid)
+    assert first is not None  # first caller wins the claim (approved -> sending)
+    second = server._claim_for_send(mid)
+    assert second is None  # second caller blocked — no double-send
+
+
+def test_add_message_rejects_ai_voice():
+    state.upsert_company(server._conn, "acme", "Acme")
+    cid = state.add_contact(server._conn, "acme", "Jane")
+    res = server.add_message(cid, "email", "I build systems — and ship them.")
+    assert "violations" in res  # em-dash blocked at the server, not just in a skill
+    clean = server.add_message(cid, "email", "I build systems and ship them. Thanks!")
+    assert clean.get("status") == "draft"

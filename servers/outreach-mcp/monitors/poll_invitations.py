@@ -20,15 +20,37 @@ from integrations import linkedin  # noqa: E402
 def main():
     if not os.environ.get("LINKEDIN_LI_AT"):
         return  # poller off
-    conn = store.connect_default()
-    accepted = {a["name"].lower() for a in linkedin.get_accepted_connections()}
+    try:
+        conn = store.connect_default()
+        accepted = linkedin.get_accepted_connections()  # [{name, profile}]
+    except Exception:
+        return  # never crash the session on a flaky poll
     if not accepted:
         return
-    rows = conn.execute(
-        "SELECT c.id, c.name FROM contacts c JOIN linkedin l ON l.contact_id=c.id "
-        "WHERE l.status='SENT'").fetchall()
+
+    from collections import Counter
+    profiles = {a["profile"].lower() for a in accepted if a.get("profile")}
+    accepted_name_counts = Counter(a["name"].lower() for a in accepted if a.get("name"))
+
+    try:
+        rows = conn.execute(
+            "SELECT c.id, c.name, c.linkedin_url FROM contacts c "
+            "JOIN linkedin l ON l.contact_id=c.id WHERE l.status='SENT'").fetchall()
+    except Exception:
+        return
+    sent_name_counts = Counter((r["name"] or "").lower() for r in rows)
+
     for r in rows:
-        if r["name"].lower() in accepted:
+        url = (r["linkedin_url"] or "").lower()
+        # Prefer matching on the unique profile identifier embedded in the URL.
+        matched = any(p and p in url for p in profiles)
+        if not matched:
+            # Name fallback ONLY when unambiguous on both sides — never flip the
+            # wrong contact when two people share a name.
+            nm = (r["name"] or "").lower()
+            matched = bool(nm) and accepted_name_counts.get(nm, 0) == 1 \
+                and sent_name_counts.get(nm, 0) == 1
+        if matched:
             state.set_linkedin_status(conn, r["id"], "ACCEPTED")
             state.set_linkedin_status(conn, r["id"], "DM_REVIEW")
             print(f"[job-hunter] {r['name']} accepted your LinkedIn request — "

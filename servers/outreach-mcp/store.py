@@ -25,8 +25,9 @@ def _migrate(conn):
     for table, col, decl in [("learnings", "distilled_at", "TEXT")]:
         try:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {decl}")
-        except Exception:
-            pass
+        except sqlite3.OperationalError as e:
+            if "duplicate column" not in str(e).lower():
+                raise  # already migrated is fine; locked/disk/real errors must surface
 
 
 def connect_default():

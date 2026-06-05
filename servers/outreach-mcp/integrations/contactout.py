@@ -3,11 +3,9 @@ sales), and API match-rate is lower than its (un-automatable) browser extension.
 Only used when the user has a seat. httpx lazy."""
 import os
 
+from ._base import CreditError  # noqa: F401
+
 BASE = "https://api.contactout.com/v1"
-
-
-class CreditError(Exception):
-    pass
 
 
 def _headers():
