@@ -52,16 +52,6 @@ def _adapt_contactout(contact, domain):
 _ADAPTERS = {"hunter": _adapt_hunter, "apollo": _adapt_apollo, "contactout": _adapt_contactout}
 
 
-def _usable_account(conn, service, cost):
-    rows = conn.execute(
-        "SELECT account_id, remaining, status FROM credits WHERE service=? "
-        "ORDER BY (account_id='default') DESC, account_id ASC", (service,)).fetchall()
-    for r in rows:
-        if r["status"] != "exhausted" and r["remaining"] >= cost:
-            return r["account_id"]
-    return None
-
-
 def enrich(conn, contact, domain):
     """Resolve a verified email (+phone if available) through the chain.
 
@@ -81,7 +71,7 @@ def enrich(conn, contact, domain):
         if service not in _ADAPTERS:
             continue
         cost = COST.get(service, 1)
-        account = _usable_account(conn, service, cost)
+        account = credits.usable_account(conn, service, cost)
         if account is None:
             continue
         any_credits = True

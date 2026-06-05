@@ -80,19 +80,26 @@ def mark_exhausted(conn, service, account_id="default", reset_at=None):
     conn.commit()
 
 
+def usable_account(conn, service, cost):
+    """The first non-exhausted, sufficiently-credited account for a service (default
+    first, then rotation accounts), or None. Single source of truth for 'can this
+    service do an op right now' — used by pick_provider and the enrichment chain."""
+    rows = conn.execute(
+        "SELECT account_id, remaining, status FROM credits WHERE service=? "
+        "ORDER BY (account_id='default') DESC, account_id ASC", (service,)).fetchall()
+    for r in rows:
+        if r["status"] != "exhausted" and r["remaining"] >= cost:
+            return r["account_id"]
+    return None
+
+
 def pick_provider(conn, op):
     """Return (service, account_id) of the first chain member that can do `op`,
     or None if every provider/account is exhausted or under-credited."""
-    chain = CHAINS.get(op, CHAINS["enrich"])
-    for service, cost in chain:
-        rows = conn.execute(
-            "SELECT account_id, remaining, status FROM credits WHERE service=? "
-            "ORDER BY (account_id='default') DESC, account_id ASC",
-            (service,),
-        ).fetchall()
-        for r in rows:
-            if r["status"] != "exhausted" and r["remaining"] >= cost:
-                return (service, r["account_id"])
+    for service, cost in CHAINS.get(op, CHAINS["enrich"]):
+        account = usable_account(conn, service, cost)
+        if account:
+            return (service, account)
     return None
 
 

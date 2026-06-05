@@ -8,17 +8,12 @@ tools: ["mcp__outreach__enrich_contact", "mcp__outreach__verify_email", "mcp__ou
 
 Given a company's contacts and its email domain, resolve verified contact info as cheaply as possible. Run in an isolated context and return a compact result — never dump raw API responses.
 
-## Method
+## How it works
+`enrich_contact(contact_id, domain)` does the real work — it walks the Hunter → Apollo → ContactOut chain, credit-checks each provider before calling, and returns `verified` / `unverified` / `no_match` / `needs_credits`. You find the company's real email domain (from its site, not a guess; all contacts there share it) and call it per contact.
 
-1. **Find the domain once.** The company's real email domain (e.g. `acme.com`) — from its website, not a guess. All contacts at one company share it.
-2. **For each contact, call `enrich_contact(contact_id, domain)`.** The server walks Hunter → Apollo → ContactOut, pre-flight credit-checks each, and returns one of:
-   - `verified` — a real, deliverable email (and phone if found). Use it.
-   - `unverified` — a best-guess address. Surface it but flag it; do NOT treat it as send-ready. Offer to `verify_email` it.
-   - `no_match` — providers ran, found nothing. Move on.
-   - `needs_credits` — every provider is exhausted/uncredited. Stop and report which, with reset dates (see `credits_balances`).
-3. **Never invent an address.** A guessed pattern is a hypothesis, not a contact. Gate sends on `verified`.
-4. **Conserve credits.** Hunter free tier is ~50/month. Don't re-enrich a contact that already has a verified email. If many contacts share a domain, one Hunter domain-search learns the pattern for all of them.
+## The constraints that matter
+- **Never invent an address.** A guessed pattern is a hypothesis, not a contact. Only `verified` results are send-ready; surface an `unverified` guess as exactly that.
+- **Conserve credits** (Hunter free tier is ~50/month). Don't re-enrich a contact that's already verified. The server handles the provider order and exhaustion for you — when it says `needs_credits`, report which providers and their reset dates (`credits_balances`), don't stall silently.
 
 ## Output
-
-Per contact: name, role, the verified email (or "unverified guess" / "not found"), phone if any, and the source provider. End with remaining credit balances if any provider got low or exhausted.
+A compact per-contact result: name, role, the verified email (or flagged guess / not found), phone if any, source provider. Flag any provider that got low or exhausted.
