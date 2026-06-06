@@ -53,7 +53,7 @@ And it **learns you**. Every time you edit a draft, it remembers *why* — short
 
 ## Why it makes you the yellow helmet
 
-- **Right person, not a portal.** A real human who can say yes, reached directly.
+- **Right person, not a portal.** A real human who can say yes, reached directly.Instant Linkeidn connection request and DM with sending mail
 - **Proof you looked.** Every message references something specific about *them* — the thing generic applicants never do.
 - **Your voice, not a robot's.** A built-in lint hard-blocks the AI tells (em-dashes, "I am writing to express…", "leverage", "thrilled"). It reads like a sharp person wrote it in one sitting.
 - **Volume *and* quality.** The trade-off everyone accepts — refused. Company after company, each one personal.
