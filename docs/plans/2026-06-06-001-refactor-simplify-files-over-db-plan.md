@@ -1,7 +1,7 @@
 ---
 title: "refactor: Simplify job-hunter — files over DB, ~7 tools not 37"
 type: refactor
-status: active
+status: completed
 date: 2026-06-06
 depth: deep
 origin: none (solo plan; simplification of the v0.2.0 build)
