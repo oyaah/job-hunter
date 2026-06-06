@@ -7,8 +7,8 @@ description: Draft a voice-matched cold email + LinkedIn note + DM for a contact
 
 Produce voice-matched outreach for one or more researched contacts.
 
-If the contact isn't researched yet, run **person-researcher** first (the message is only as good as the hook). Then dispatch **message-writer** with the contact's digest, the user's `voice-profile.md`, and `learnings_context`.
+If the contact isn't researched yet, run **person-researcher** first (the message is only as good as the hook). Then dispatch **message-writer** with the contact's digest, the user's `voice-profile.md`, and `learnings.md`.
 
 The writer enforces the user's learned voice plus the universal anti-AI lint. Drafts land in the store with status `draft` and flow to `/job-hunter:review` — nothing sends here.
 
-Show the user the draft. If they edit it, that edit is a voice lesson — capture the gist with `learning_record("voice", ...)` so the next draft needs less correction.
+Show the user the draft. If they edit it, that edit is a voice lesson — append the gist to `learnings.md` so the next draft needs less correction.

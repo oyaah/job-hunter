@@ -9,6 +9,6 @@ Turn the user's preferences (and a seed — a role, an industry, or a starting c
 
 Dispatch the **target-scout** agent (isolated context, returns a compact ranked shortlist). Pass it the user's `targeting-prefs.md`, the seed, and let it apply `learnings`. Persist results to the store.
 
-Then show the user the shortlist and ask if it's right — too broad, wrong tier, missing a filter? Their reaction is signal: record it with `learning_record("targeting", ...)` so the list improves every time. This is the loop that makes targeting yours, not generic.
+Then show the user the shortlist and ask if it's right — too broad, wrong tier, missing a filter? Their reaction is signal: append it to `learnings.md` so the list improves every time. This is the loop that makes targeting yours, not generic.
 
 When the user's happy, the companies are queued for `/job-hunter:hunt`.
