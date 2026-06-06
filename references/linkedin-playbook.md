@@ -1,61 +1,73 @@
-# LinkedIn playbook — drive the user's own Chrome
+# LinkedIn playbook — drive the user's own Chrome, fast
 
 This is context, not a script. You (the model) already know how to use a browser.
-The job here is to do LinkedIn outreach **in the user's own logged-in Chrome** — the
-session they're already signed into. Read the goal, honor the rails, use judgment.
+The job: do LinkedIn outreach **in the user's own logged-in Chrome** — the session
+they're already signed into. Move fast, honor the rails, use judgment.
 
-## Which tool to use (cheapest reliable first)
+## The one rule that makes everything work: trusted input
 
-1. **Claude in Chrome** (`/chrome`) — the default. The user is already logged into
-   LinkedIn there; reuse that session. Open tabs, read the page, click, type.
-2. **macos-automator** (mac fallback, bundled) — when Chrome integration isn't on but
-   you're on a Mac. Drive the user's real Chrome with AppleScript/JXA, no screenshots:
-   - `get_scripting_tips` first — it has a knowledge base of Chrome/Safari recipes; pull
-     the relevant one instead of hand-writing AppleScript.
-   - `execute_script` to **open/activate Chrome, navigate to the LinkedIn URL** (a search
-     URL like `https://www.linkedin.com/search/results/people/?keywords=<name>%20<company>`,
-     or the person's profile), and act on the page. AppleScript can tell Chrome to run
-     JavaScript in the active tab (`tell application "Google Chrome" ... execute javascript`),
-     which is how you click Connect / fill the note / send — scriptable, deterministic.
-   - `accessibility_query` when a click is easier through the macOS accessibility tree.
-3. **computer-use** — absolute last resort (screenshots + clicks). Slow and token-heavy;
-   you almost never need it for LinkedIn.
+LinkedIn **ignores synthetic JavaScript clicks** (`.click()`, dispatched events) on its
+Connect / Message / Send controls — it checks `event.isTrusted`. So:
 
-If none are available, say so plainly and stop — don't pretend an action happened.
+- **Reading and navigating is free.** Use Chrome `execute javascript` to set URLs, scrape
+  search results, read a profile, confirm degree/identity. This always works.
+- **Acting (click a button, type, send) needs a *trusted* input path:**
+  1. **Claude in Chrome** (`/chrome`) — the default. It issues real, trusted clicks. Use it.
+  2. **macos-automator / System Events** (mac fallback) — real OS-level mouse clicks and
+     keystrokes (`click at {x,y}`, `keystroke`). **Requires macOS Accessibility permission**
+     for the terminal app (one-time grant). This is what makes the fallback actually send.
+  3. **computer-use** — last resort (screenshots). Rarely needed.
+
+If neither trusted path is available, do the reading/disambiguation, prep the draft, and
+tell the user to do the final click — never pretend it sent.
+
+## How LinkedIn is laid out (so you move fast, no fumbling)
+
+- **People search:** `https://www.linkedin.com/search/results/people/?keywords=<name>%20<company>`.
+  Each result card shows a **degree badge — "· 1st / 2nd / 3rd"** and an action button:
+  **1st-degree → "Message"**, 2nd/3rd → **"Connect"** or **"Follow"**.
+- **Disambiguate before acting.** Multiple people share names. Match on the headline /
+  education / location in the card (e.g. "IITR '27", "iGEM IIT Roorkee") and the **1st**
+  badge before you touch anything. Scrape cards generically with `a[href*="/in/"]` plus the
+  surrounding card text — don't depend on LinkedIn's churning CSS class names.
+- **Connect:** click **Connect** → **"Add a note"** → paste the reviewed note (≤300 chars) → **Send**.
+- **DM (1st-degree only):** click **Message** → a composer overlay opens bottom-right with a
+  contenteditable text box, **already focused** → type the reviewed text → **Enter sends**
+  (Shift+Enter = newline). For a 2nd/3rd-degree person you can't DM — connect first.
+- **Acceptance check (the `watch` loop):** open the person's profile or re-run the search;
+  **degree shows "1st" once they've accepted** (2nd/3rd = still pending). That's the reliable
+  signal — there's no clean "pending invites" list.
+
+### Concrete fallback send (System Events, when Chrome integration is off)
+
+1. `execute javascript` to find the target button, `scrollIntoView`, and read its center
+   `getBoundingClientRect()` plus `innerHeight`/`innerWidth`.
+2. Read the Chrome window's screen `position`/`size` via System Events; the page's top-left
+   in screen points ≈ `(winX, winY + (winHeight − innerHeight))`. Add the button's viewport
+   x/y to get screen coords. `click at {x, y}` — a real, trusted click — opens the composer.
+3. The composer text box is auto-focused: `keystroke "<reviewed text>"`, then `key code 36`
+   (Return) to send. Verify by reading the thread back.
 
 ## The outreach arc
 
 Work **one contact at a time**, off the company state file (`state/<slug>.json`).
 
-**Sending a connection request:**
-1. `linkedin_guard("connect")`. If it returns `blocked`, stop for today — tell the user
-   the cap is hit. Only proceed on `ok`.
-2. Open the person's profile in Chrome (search their name + company if you don't have the
-   URL). Confirm it's the right person against the company file.
-3. Click **Connect** → **Add a note**, paste the **already-reviewed** note (the one that
-   passed the review gate — never improvise a new one here), send.
-4. `linkedin_record("connect")`, set the contact's `linkedin.status = SENT` in the file.
+**Connect:** `linkedin_guard("connect")` → if `ok`, find + confirm the person, Connect +
+paste the **already-reviewed** note, Send → `linkedin_record("connect")`, set `linkedin.status = SENT`.
 
-**Tracking acceptances (the `watch` loop):**
-- For contacts with `linkedin.status == SENT`, open their profile in Chrome and read the
-  **connection degree**: **1st** = accepted; 2nd/3rd = still pending. That's the reliable
-  signal — there's no clean "pending invites" list. If a profile won't load, skip it.
-- On acceptance: set `linkedin.status = DM_REVIEW`. If the prepared DM is thin or stale,
-  redraft from their now-richer profile (dispatch `message-writer`).
+**Watch acceptances:** for `status == SENT`, check the degree; on **1st** set `DM_REVIEW`
+(redraft the DM from their richer profile if it's thin — dispatch `message-writer`).
 
-**Sending the DM (1st-degree only):**
-1. Surface the DM for review — same human gate as email. Capture any edit in `learnings.md`.
-2. On approval: `linkedin_guard("message")`; only on `ok`, open the conversation in Chrome
-   and send the reviewed text. Then `linkedin_record("message")`, set `linkedin.status = DM_SENT`.
+**DM:** surface for review (same gate as email; log edits to `learnings.md`) → on approval
+`linkedin_guard("message")` → if `ok`, send the reviewed text in the composer (Enter) →
+`linkedin_record("message")`, set `DM_SENT`.
 
 ## Rails (non-negotiable)
 
-- **Review gate first.** The connection note and the DM are sent only *after* the human
-  approved that exact text. You are pasting approved content, not writing it live.
-- **The guard is the daily cap.** Always `linkedin_guard(...)` before the action; it's the
-  honest cross-session counter and it's channel-agnostic — same call whether you're in
-  Chrome, macos-automator, or anything else.
-- **Human-paced.** ~15–25 connects/day is healthy. LinkedIn tolerates normal activity, not
-  bulk. The guard enforces the hard cap; you keep the rhythm sane.
-- **Login / CAPTCHA.** Chrome integration pauses and hands control back when it hits a login
-  or CAPTCHA — let the user clear it, then continue. Never try to defeat a challenge.
+- **Review gate first.** The note and the DM are sent only *after* the human approved that
+  exact text. You paste approved content; you never improvise a message to a real person.
+- **Guard is the daily cap.** Always `linkedin_guard(...)` before the action — the honest,
+  channel-agnostic counter. Same call whether Chrome or System Events.
+- **Human-paced.** ~15–25 connects/day. The guard enforces the hard cap; you keep the rhythm sane.
+- **Login / CAPTCHA.** Chrome integration pauses for these — let the user clear it, then continue.
+  Never try to defeat a challenge.

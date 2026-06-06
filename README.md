@@ -4,7 +4,7 @@
 
 ### Be the yellow helmet in a sea of grey.
 
-**An AI plugin that runs your whole job-hunt outreach — finds the right people, writes emails that sound like *you*, and works LinkedIn — company after company, while you approve each one.**
+**An AI plugin that runs your entire job-hunt outreach — finds the right people, writes emails that sound like *you*, works LinkedIn in your own browser — company after company, while you approve every send.**
 
 [![CI](https://github.com/oyaah/job-hunter/actions/workflows/ci.yml/badge.svg)](https://github.com/oyaah/job-hunter/actions)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin-7C3AED)](https://docs.claude.com/en/docs/claude-code)
@@ -21,7 +21,7 @@ The job market is a crowd. Hundreds of identical applicants, identical resumes, 
 
 The people who get the interview don't apply harder. They reach the *right human* with a message that proves they actually looked — and they do it at *every* target company, not just the two they had energy for that week.
 
-That's hard to do by hand. It's slow, it's repetitive, and good outreach takes real research per person. So most people don't. They stay grey.
+That's slow, repetitive, and research-heavy to do by hand. So most people don't. They stay grey.
 
 ## What job-hunter does
 
@@ -40,7 +40,7 @@ your resume + a list of companies
   YOU review it  ──►  approve / edit / reject
         │
         ▼
-  send the email + the LinkedIn connect
+  send the email + the LinkedIn connect   (in your own Chrome, your own session)
         │
         ▼
   when they accept  ──►  drafts the DM ──► you approve ──► sent
@@ -56,7 +56,8 @@ And it **learns you**. Every time you edit a draft, it remembers *why* — short
 - **Right person, not a portal.** A real human who can say yes, reached directly.
 - **Proof you looked.** Every message references something specific about *them* — the thing generic applicants never do.
 - **Your voice, not a robot's.** A built-in lint hard-blocks the AI tells (em-dashes, "I am writing to express…", "leverage", "thrilled"). It reads like a sharp person wrote it in one sitting.
-- **Volume *and* quality.** The thing that's normally a trade-off. Company after company, each one personal.
+- **Volume *and* quality.** The trade-off everyone accepts — refused. Company after company, each one personal.
+- **Runs in your own browser.** LinkedIn happens in *your* logged-in Chrome, not a sketchy headless scraper. Lighter, safer, and there's nothing extra to log into.
 - **You approve everything.** Nothing leaves your account without you saying yes. It's an assistant, not a spam cannon.
 
 ## Who this is for
@@ -68,36 +69,79 @@ And it **learns you**. Every time you edit a draft, it remembers *why* — short
 
 Not for: bulk spam. It's deliberately rate-limited and human-reviewed. Quality is the whole point.
 
-## Quickstart
+---
+
+## Quickstart (try it in 2 minutes)
 
 > Works in **Claude Code** today. Desktop-app bundle (`.mcpb`) and Codex supported too.
 
 ```bash
-# 1. install (Claude Code)
 /plugin marketplace add oyaah/job-hunter
 /plugin install job-hunter
 # enable it, then:
 /job-hunter:setup       # resume + your voice + one free API key + how you send mail
-
-# 2. hunt
 /job-hunter:hunt        # give it companies — it works them one by one, you approve each
-/job-hunter:watch       # checks LinkedIn acceptances, drafts the DMs
-/job-hunter:status      # where everything stands
 ```
 
-## What you need before you start
+That alone gets you verified emails and voice-matched drafts you approve and send. For the **hands-off, full-pipeline** experience (LinkedIn included, acceptances auto-watched), do the setup below once.
 
-Everything in the required column is **free**. Works on **macOS, Windows, and Linux**.
+---
 
-| Need | Why | How to get it |
-|------|-----|---------------|
-| **Python 3.12+** | runs the outreach server | [python.org](https://www.python.org/downloads/) (`python3 --version`) |
-| **[uv](https://docs.astral.sh/uv/)** | launches the outreach server | `curl -LsSf https://astral.sh/uv/install.sh \| sh` (mac/linux) · `winget install astral-sh.uv` (win) |
-| **[Hunter.io](https://hunter.io/api-keys) API key** | finds *verified* emails (no guessing, no bounces) | free tier = 50 lookups/mo, real API |
-| **A way to send mail** | to actually send the outreach | pick one below ↓ |
-| **LinkedIn in Chrome** | for the connect + DM flow | the [Claude in Chrome](https://chromewebstore.google.com/detail/claude/fcoeoabgfenejglbffodgkkbkcdhcgfn) extension + you signed into LinkedIn (see below) |
+## ⚡ Full automation — what to have, what to do
 
-### Choosing how you send mail
+The most hands-off version runs the whole arc — find → enrich → research → draft → **you approve** → send email **and** work LinkedIn → watch for acceptances → draft + send the DM → next company — looping on its own. Here's the complete setup.
+
+### 1. Have these ready
+
+| # | What | Why | Free? |
+|---|------|-----|-------|
+| 1 | **[Claude Code](https://docs.claude.com/en/docs/claude-code)** + a direct Anthropic plan (Pro/Max) | runs the plugin; the plan unlocks the Chrome integration | plan is paid |
+| 2 | **Python 3.12+** | runs the outreach server (`python3 --version`) | ✅ |
+| 3 | **[Hunter.io](https://hunter.io/api-keys) API key** | finds *verified* emails — no guessing, no bounces | ✅ 50/mo |
+| 4 | **A send channel** — a Gmail **[App Password](https://myaccount.google.com/apppasswords)** (recommended) | so email actually sends, hands-off, on any OS | ✅ |
+| 5 | **[Claude in Chrome](https://chromewebstore.google.com/detail/claude/fcoeoabgfenejglbffodgkkbkcdhcgfn) extension** + signed into LinkedIn in that Chrome | LinkedIn runs in *your* real session — trusted clicks, no scraper | ✅ |
+| 6 | *(mac fallback)* **[Node.js](https://nodejs.org)** | powers the `macos-automator` fallback that drives Chrome when the extension isn't available | ✅ |
+
+### 2. Do this once
+
+```bash
+# a. install + enable the plugin
+/plugin marketplace add oyaah/job-hunter
+/plugin install job-hunter
+
+# b. turn on Chrome control (the LinkedIn engine)
+/chrome                      # or launch with:  claude --chrome
+#    → keep a Chrome window signed into LinkedIn
+
+# c. run the guided setup — it walks you through the rest
+/job-hunter:setup            # resume · your writing voice · Hunter key · Gmail App Password
+```
+
+**Grant the mac permissions** (only needed for the `macos-automator` fallback, and asked for on first use): System Settings → Privacy & Security → **Automation** *and* **Accessibility** → enable **your terminal app** (whatever runs Claude Code — e.g. Ghostty, Terminal, iTerm) for **Google Chrome** and **System Events**; and in Chrome, **View → Developer → Allow JavaScript from Apple Events**.
+
+> ⚠️ **After granting Accessibility, fully quit and reopen your terminal app.** macOS caches the old "denied" state until the app restarts, so real clicks/keystrokes will keep failing (`-1719 not allowed assistive access`) until you do. Automation (reading/navigating Chrome) works without a restart; Accessibility (clicking/typing) needs one. This is why **Claude in Chrome is the smoother path** — it issues trusted clicks itself and needs none of these grants.
+
+### 3. Then let it run
+
+```bash
+/job-hunter:hunt                 # feed it companies; it works them one by one, you approve each send
+/job-hunter:watch                # checks who accepted your LinkedIn requests, drafts their DMs
+/job-hunter:status               # where every contact stands
+```
+
+Want it truly hands-off? Pair the watcher with `/loop` on a slow cadence so acceptances turn into reviewed DMs without you babysitting:
+
+```bash
+/loop 3h /job-hunter:watch
+```
+
+> **One honest note on "full" automation.** LinkedIn outreach runs in your real Chrome via **Claude in Chrome**, which issues *trusted* clicks — that's what reliably opens a connect dialog or sends a DM. The plain `macos-automator` fallback is great for opening Chrome, searching, and reading the page, but LinkedIn's anti-bot guards reject *synthetic* clicks, so on the fallback path you may finish the final click yourself. Either way, **every** note and DM still passes your review gate first — automation never means "unsupervised."
+
+---
+
+## Choosing how you send mail
+
+SMTP with a Gmail App Password is the only fully hands-off path on every OS — use it unless you have a reason not to.
 
 | Channel | OS | Setup | Behaviour |
 |---------|-----|-------|-----------|
@@ -107,40 +151,29 @@ Everything in the required column is **free**. Works on **macOS, Windows, and Li
 | **`local`** | Linux | nothing — uses `xdg-email` / Thunderbird | opens a compose window **pre-filled** (you click Send) |
 | **Gmail OAuth** | mac / win / linux | a Desktop `credentials.json` from Google Cloud | **sends**; re-auth ~weekly (Testing mode) |
 
-> The `local` channel never *pretends* it sent: when it can only pre-fill a draft (Linux, or Windows without Outlook) `send_email` returns `delivery: "composed"` and the plugin tells you to click Send. **SMTP is the only fully hands-off path on every OS** — use it unless you have a reason not to.
+The `local` channel never *pretends* it sent: when it can only pre-fill a draft (Linux, or Windows without Outlook) `send_email` returns `delivery: "composed"` and tells you to click Send.
 
-### LinkedIn — uses *your own* Chrome (no scraper, no extra login)
-
-job-hunter works LinkedIn in **the browser you're already logged into**, not a bundled headless scraper. That means nothing to authenticate separately and no 40MB browser download — and it keeps your default sessions light (the plugin loads zero LinkedIn tools until you act).
-
-Setup, once:
-1. Install the **[Claude in Chrome](https://chromewebstore.google.com/detail/claude/fcoeoabgfenejglbffodgkkbkcdhcgfn)** extension.
-2. Run `/chrome` in Claude Code (or start with `claude --chrome`).
-3. Stay signed into LinkedIn in that Chrome.
-
-That's it. Connection requests and DMs are **gated** (each passes the review gate) and **rate-capped** (`linkedin_daily_cap`, default 40). LinkedIn automation is against their ToS — keep volume human-paced (~15–25 connects/day); that's what keeps an account safe. The full flow lives in [`references/linkedin-playbook.md`](references/linkedin-playbook.md).
-
-**Mac fallback (no Claude-in-Chrome):** Chrome integration needs a direct Anthropic plan + the extension. On macOS, the plugin falls back to its bundled **`macos-automator`** server, which drives your *real* Chrome with AppleScript (opens Chrome → LinkedIn → does the work). To enable it you need:
-- **[Node.js](https://nodejs.org)** (provides `npx`, which launches the server) — `node --version` to check.
-- On first use, grant macOS **Automation** and **Accessibility** permission to your terminal/Claude Code: System Settings → Privacy & Security → Automation / Accessibility.
-
-Nothing else to configure — same review gate and daily cap as the Chrome path.
-
-### Optional paid power-ups
+## Optional paid power-ups
 
 Apollo, ContactOut, and Lemlist plug in if you already pay for them (better enrichment / sequenced sending). The plugin works great without any of them.
 
+---
+
 ## How it's built (and why it's light)
 
-The best Claude plugins win by trusting the model and giving it only the tools it truly needs. job-hunter follows that: **the model drives everything through simple files it edits directly** (your pipeline, learnings, and voice profile are just markdown/JSON you can read). Real code exists only for the handful of things the model *can't* do itself — verified email lookup, sending mail, the anti-AI lint, and an honest LinkedIn rate limit. **8 small tools, no database.** Simple wins.
+The best Claude plugins win by trusting the model and giving it only the tools it truly needs. job-hunter follows that:
 
-See [`SPEC.md`](SPEC.md) for the full design and [`CLAUDE.md`](CLAUDE.md) for the philosophy.
+- **The model drives everything through plain files it edits directly** — your pipeline, learnings, and voice profile are just markdown/JSON you can open and read. State is files, not a database.
+- **Capability comes from your own environment.** The plugin ships *context* (a LinkedIn playbook) and a handful of load-bearing tools, not a bundled browser. LinkedIn rides your Chrome; mac scripting rides the thin `macos-automator` server. Channel precedence mirrors Claude's own: **Chrome → macos-automator → computer-use**, cheapest reliable first.
+- **Real code exists only for what the model can't do itself** — verified email lookup, gated mail send, the anti-AI voice lint, and an honest cross-session LinkedIn rate limit. **8 small tools, no database, zero LinkedIn tools loaded until you act.**
+
+See [`SPEC.md`](SPEC.md) for the full design, [`CLAUDE.md`](CLAUDE.md) for the philosophy, and [`references/linkedin-playbook.md`](references/linkedin-playbook.md) for exactly how it works LinkedIn.
 
 ## Safety, plainly
 
 - **Nothing sends without your explicit approval** — email and LinkedIn both.
 - **Never invents an email address** — only verified ones go out.
-- **LinkedIn stays human-paced** — a daily cap, real review, no bulk blasting. (LinkedIn automation is against their ToS; this keeps it gentle and gated, but use your judgment.)
+- **LinkedIn stays human-paced** — a daily cap (default 40), real review, no bulk blasting. (LinkedIn automation is against their ToS; this keeps it gentle and gated, but use your judgment.)
 - **Your keys live in your OS keychain**, never in this repo.
 
 ## License
