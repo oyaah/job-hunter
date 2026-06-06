@@ -1,7 +1,7 @@
 {
   "name": "job-hunter",
-  "version": "0.3.0",
-  "description": "End-to-end job-hunt cold outreach automation. Framework-agnostic: the outreach-mcp server runs identically under Claude Code, Codex, and Codex terminal. Configure via env vars: HUNTER_API_KEY (required), GMAIL_ADDRESS + GMAIL_APP_PASSWORD (default SMTP send — works on every OS), APOLLO_API_KEY/CONTACTOUT_API_KEY/LEMLIST_API_KEY (optional paid). LinkedIn actions use the bundled linkedin-scraper-mcp. The 'local' channel sends through the desktop mail client (Mail.app/Outlook send; Linux & non-Outlook Windows compose pre-filled); SMTP is the cross-platform default.",
+  "version": "0.4.0",
+  "description": "End-to-end job-hunt cold outreach automation. Framework-agnostic: the outreach-mcp server runs identically under Claude Code, Codex, and Codex terminal. Configure via env vars: HUNTER_API_KEY (required), GMAIL_ADDRESS + GMAIL_APP_PASSWORD (default SMTP send — works on every OS), APOLLO_API_KEY/CONTACTOUT_API_KEY/LEMLIST_API_KEY (optional paid). LinkedIn actions run in the user's own logged-in Chrome (Claude in Chrome) per references/linkedin-playbook.md; linkedin-scraper-mcp is an opt-in headless fallback, not auto-loaded. The 'local' channel sends through the desktop mail client (Mail.app/Outlook send; Linux & non-Outlook Windows compose pre-filled); SMTP is the cross-platform default.",
   "skills": "./skills",
   "agents": "./agents",
   "mcpServers": "./.mcp.json"

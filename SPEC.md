@@ -26,14 +26,14 @@ agents/      worker agents (isolated context, compact returns): target-scout, co
 servers/outreach-mcp/   ONLY load-bearing tools (~8 FastMCP tools); state lives in files
 references/  loaded-on-demand context (voice + targeting templates, enrichment fallback)
 hooks/       SessionStart readiness summary
-.mcp.json    launches outreach (our server) + linkedin (bundled backend)
+.mcp.json    launches outreach (our server) only — LinkedIn rides the user's own Chrome
 ```
 
 **Why this shape:** it's the compound-engineering / superpowers convention — skills are the UX surface and stay near-trivial; worker agents do the reasoning in isolated contexts; one MCP server holds the logic so the agent's context stays lean (a fat skill bloats every turn). The same server is framework-agnostic, so the product runs under Claude Code, Codex, and Codex terminal identically; the Claude desktop app is reached later via an `.mcpb` bundle of the same package.
 
-**Two MCP servers, one workflow:**
-- `outreach` (ours) — all state, enrichment, email, learnings, LinkedIn lifecycle + rate guard.
-- `linkedin` (bundled `linkedin-scraper-mcp==4.13.2`) — performs the actual LinkedIn browser actions. Pinned, never `@latest`.
+**One bundled MCP server, plus the user's own browser:**
+- `outreach` (ours) — all state, enrichment, email, learnings, LinkedIn lifecycle + rate guard. The only server we auto-load.
+- LinkedIn actions run in the **user's own logged-in Chrome** (Claude in Chrome), guided by `references/linkedin-playbook.md`. The `linkedin-scraper-mcp==4.13.2` backend is an **opt-in headless fallback** the user can add to their `.mcp.json` — not auto-loaded, so the default session carries zero LinkedIn tool schemas. See §LinkedIn for the channel precedence.
 
 ---
 
@@ -80,7 +80,7 @@ The model drives sequencing (the `hunt` skill gives the arc and the tools, not a
 
 **Published OAuth (the one-click goal).** `gmail.send` is a *sensitive* scope (not restricted) → publishing the OAuth app needs only Google's ~3–5 day brand review, **no CASA security audit**. Plan: ship a single `client_id` (installed-app `client_secret` is public by Google's design; PKCE carries security), so each user just clicks "Allow". Until the app is verified, SMTP/Mail.app cover everyone; OAuth flips on when Google clears it.
 
-**LinkedIn — swappable adapter over a pinned backend (option b).** The workflow speaks one contract — `connect / message / accepted`. Today the bundled `linkedin-scraper-mcp` (Patchright stealth browser, session-cookie auth, pinned 4.13.2) performs the actions; our `linkedin_adapter` owns the **production behavior that's ours regardless of backend**: the daily rate guard and counters. Acceptance is detected via `get_person_profile` connection degree (**1st = accepted**) — the only reliable signal the backend exposes. If upstream ever breaks, swap the backend behind the adapter without touching the workflow. **Honest limit:** LinkedIn automation is intrinsically fragile and ToS-adjacent; the design goal is *graceful + swappable + rate-guarded*, not immortal.
+**LinkedIn — drive the user's own Chrome, channel-agnostic guard (Chrome-first).** The workflow speaks one contract — `connect / message / accepted` — and the **primary channel is the user's own logged-in Chrome** (Claude in Chrome), guided by `references/linkedin-playbook.md`. We bundle no browser: capability comes from the user's environment. Channel precedence mirrors Claude's own — Chrome → mac automation (osascript / macos-automator) → the opt-in `linkedin-scraper-mcp` headless fallback → computer-use (last resort). What stays **ours regardless of channel** is the production behavior the model can't do itself: the daily rate guard + counters (`linkedin_guard`/`linkedin_record`). Acceptance is detected by reading connection degree (**1st = accepted**) on the profile. **Honest limit:** LinkedIn automation is intrinsically fragile and ToS-adjacent; the design goal is *graceful + channel-swappable + rate-guarded*, not immortal. Driving the user's real session (vs a headless stealth browser) is both lighter and less adversarial to LinkedIn.
 
 ---
 
@@ -98,7 +98,7 @@ Net effect: drafts and targets get more "you" over time, and the carried context
 ## 7. Safety rails (the few hard constraints)
 
 1. **No email without explicit approval** — enforced at the tool layer (atomic claim), not just in a skill.
-2. **LinkedIn is automated but gated + human-paced** — connection note and DM both pass review; a generous configurable daily cap (default 40) guards against runaway loops; backend uses stealth; volume stays human-paced.
+2. **LinkedIn is automated but gated + human-paced** — connection note and DM both pass review; a generous configurable daily cap (default 40) guards against runaway loops; it runs in the user's own real Chrome session; volume stays human-paced.
 3. **Never invent an email** — gate sends on `verified`.
 4. **Anti-AI voice lint is non-negotiable** — `add_message` rejects em/en-dashes and banned AI cadence at the server, on top of the user's learned voice.
 5. **Credit honesty** — no doomed calls; exhaustion surfaces with pay/switch/rotate options; account rotation is flagged as ToS-risky, never silent.

@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "job-hunter",
   "display_name": "Job-Hunter",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Run your whole job-hunt outreach — find the right people, write emails in your voice, work LinkedIn — company after company, with you approving every send.",
   "author": { "name": "oyaah", "url": "https://github.com/oyaah" },
   "homepage": "https://github.com/oyaah/job-hunter",

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0 — 2026-06-06 (Chrome-first LinkedIn — drive your own browser, unbundle the scraper)
+
+- **LinkedIn now runs in the user's own logged-in Chrome** (Claude in Chrome), guided by a single declarative playbook (`references/linkedin-playbook.md`) — search → connect+note → track acceptance (1st-degree) → DM, all human-reviewed. No bundled browser, no separate login, reuses the session you're already in.
+- **Unbundled `linkedin-scraper-mcp`** from `.mcp.json` — it no longer auto-loads ~17 tools into every session. It's now an **opt-in headless fallback** (one-line snippet in the README) for users without Chrome integration. Big token win for the default user.
+- **`linkedin_guard`/`linkedin_record` stay the channel-agnostic rate rail** — same daily-cap call whether you act via Chrome, mac automation, or the fallback MCP. All safety rails unchanged: review gate before every send, never invent an email, voice lint, human-paced volume.
+- Channel precedence documented (MCP → Bash → Chrome → computer-use, cheapest reliable first). New CLAUDE.md principle: *capability comes from the user's environment; the plugin ships context, not bundled browsers.* Skills (hunt/watch/review/setup) + README + manifests updated. No outreach-tool or mail-send code changed.
+
 ## 0.3.0 — 2026-06-06 (cross-platform send + real packaging)
 
 - **`local` send channel is now cross-platform** (was macOS-only). macOS Mail.app and Windows Outlook truly **send**; Linux (`xdg-email`/Thunderbird) and Windows-without-Outlook open a **pre-filled compose** window — `send_email` returns `delivery:"composed"` so a draft is never mistaken for a sent message. Injection-safe field passing per OS (osascript argv / PowerShell env vars / separate args). Replaced `mailapp.py` with `integrations/localmail.py`; 7 new tests.
