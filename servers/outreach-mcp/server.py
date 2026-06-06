@@ -74,33 +74,39 @@ def _gmail_creds_path():
 def _resolve_channel(channel):
     if channel != "auto":
         return channel
-    from integrations import smtp_send, mailapp
+    from integrations import smtp_send, localmail
     if smtp_send.configured():
         return "smtp"
-    if mailapp.available():
-        return "mailapp"
+    if localmail.available():
+        return "local"
     return "gmail"
 
 
 def _send_via(channel, to, subject, body):
+    """Returns {"channel": str, "delivery": "sent"|"composed"}. "composed" means the
+    local mail client opened pre-filled and the USER still has to click Send."""
     channel = _resolve_channel(channel)
-    if channel == "mailapp":
-        from integrations import mailapp
-        mailapp.send(to, subject, body)
-    elif channel == "gmail":
+    if channel in ("local", "mailapp"):  # "mailapp" kept as a back-compat alias
+        from integrations import localmail
+        res = localmail.send(to, subject, body)
+        return {"channel": res["via"], "delivery": res["delivery"]}
+    if channel == "gmail":
         from integrations import gmail
         gmail.send_message(to, subject, body, _gmail_creds_path())
-    else:
-        from integrations import smtp_send
-        smtp_send.send(to, subject, body)
-    return channel
+        return {"channel": "gmail", "delivery": "sent"}
+    from integrations import smtp_send
+    smtp_send.send(to, subject, body)
+    return {"channel": "smtp", "delivery": "sent"}
 
 
 @mcp.tool()
 def send_email(to: str, subject: str, body: str, approved: bool = False,
                channel: str = "auto") -> dict:
     """Send an email. BLOCKED unless approved=True (the review gate sets this only after
-    human approval). channel = auto (smtp→mailapp→gmail) | smtp | mailapp | gmail.
+    human approval).
+    channel = auto (smtp→local→gmail) | smtp | local | gmail. The local channel uses
+    the desktop mail client; on Linux (and Windows without Outlook) it opens the
+    message pre-filled and returns delivery='composed' — you still click Send.
     The body is voice-linted first; lint failures block the send."""
     if not approved:
         return {"error": "send blocked — approved is false. Show the draft, get explicit "
@@ -114,8 +120,12 @@ def send_email(to: str, subject: str, body: str, approved: bool = False,
         used = _send_via(channel, to, subject, body)
     except Exception as e:  # noqa: BLE001
         return {"status": "error", "detail": str(e),
-                "hint": "Set GMAIL_ADDRESS/GMAIL_APP_PASSWORD, or use channel='mailapp' on macOS."}
-    return {"status": "sent", "to": to, "channel": used}
+                "hint": "Set GMAIL_ADDRESS/GMAIL_APP_PASSWORD, or use channel='local'."}
+    status = "sent" if used["delivery"] == "sent" else "composed"
+    out = {"status": status, "to": to, "channel": used["channel"], "delivery": used["delivery"]}
+    if used["delivery"] == "composed":
+        out["note"] = "Opened in your local mail client — click Send to actually deliver it."
+    return out
 
 
 # ------------------------------------------------------------------- voice lint
@@ -151,11 +161,11 @@ def health() -> dict:
                            for k in ("hunter", "apollo", "contactout", "lemlist")},
            "email_channels": [], "linkedin_today": guard.used_today("connect")}
     try:
-        from integrations import smtp_send, mailapp
+        from integrations import smtp_send, localmail
         if smtp_send.configured():
             out["email_channels"].append("smtp")
-        if mailapp.available():
-            out["email_channels"].append("mailapp")
+        if localmail.available():
+            out["email_channels"].append(f"local ({localmail.describe()})")
         if os.environ.get("GMAIL_CREDENTIALS_PATH") or os.path.exists(
                 os.path.expanduser("~/.config/job-hunter/credentials.json")):
             out["email_channels"].append("gmail-oauth")

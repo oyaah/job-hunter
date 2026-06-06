@@ -85,12 +85,43 @@ Not for: bulk spam. It's deliberately rate-limited and human-reviewed. Quality i
 /job-hunter:status      # where everything stands
 ```
 
-**What you need (all free):**
-- A **[Hunter.io](https://hunter.io/api-keys)** key — free, finds verified emails.
-- A way to send mail — **macOS Mail.app** (zero setup, it's already signed in) or a **Gmail [App Password](https://myaccount.google.com/apppasswords)** (works on any OS). A one-click Google sign-in option is coming.
-- For LinkedIn automation: **[uv](https://docs.astral.sh/uv/)** + one browser login the first time.
+## What you need before you start
 
-Optional paid power-ups (Apollo, ContactOut, Lemlist) plug in if you have them; it works great without.
+Everything in the required column is **free**. Works on **macOS, Windows, and Linux**.
+
+| Need | Why | How to get it |
+|------|-----|---------------|
+| **Python 3.12+** | runs the outreach server | [python.org](https://www.python.org/downloads/) (`python3 --version`) |
+| **[uv](https://docs.astral.sh/uv/)** | launches the server + the LinkedIn tool (`uvx`) | `curl -LsSf https://astral.sh/uv/install.sh \| sh` (mac/linux) · `winget install astral-sh.uv` (win) |
+| **[Hunter.io](https://hunter.io/api-keys) API key** | finds *verified* emails (no guessing, no bounces) | free tier = 50 lookups/mo, real API |
+| **A way to send mail** | to actually send the outreach | pick one below ↓ |
+| **A LinkedIn account** | for the connect + DM flow | one browser login the first time (see below) |
+
+### Choosing how you send mail
+
+| Channel | OS | Setup | Behaviour |
+|---------|-----|-------|-----------|
+| **SMTP** *(recommended)* | mac / win / linux | a Gmail **[App Password](https://myaccount.google.com/apppasswords)** (enable 2FA first) | **sends** silently, zero-touch, no token expiry |
+| **`local`** | macOS | nothing — uses Mail.app you're already signed into | **sends** via Mail.app |
+| **`local`** | Windows | nothing if **Outlook** is installed & configured | Outlook → **sends**; otherwise opens your default client **pre-filled** (you click Send) |
+| **`local`** | Linux | nothing — uses `xdg-email` / Thunderbird | opens a compose window **pre-filled** (you click Send) |
+| **Gmail OAuth** | mac / win / linux | a Desktop `credentials.json` from Google Cloud | **sends**; re-auth ~weekly (Testing mode) |
+
+> The `local` channel never *pretends* it sent: when it can only pre-fill a draft (Linux, or Windows without Outlook) `send_email` returns `delivery: "composed"` and the plugin tells you to click Send. **SMTP is the only fully hands-off path on every OS** — use it unless you have a reason not to.
+
+### LinkedIn (optional but recommended)
+
+The bundled `linkedin` tool installs itself via `uvx`. The first time it's used it opens a **real browser window** to log into LinkedIn once; the session is saved to `~/.linkedin-mcp/profile/` (no cookie copying). To pre-authenticate before your first run:
+
+```bash
+uvx linkedin-scraper-mcp@latest --login
+```
+
+Connection requests and DMs are **gated** (each passes the review gate) and **rate-capped** (default 40/day). LinkedIn automation is against their ToS — keep volume human-paced (~15–25 connects/day); that's what keeps an account safe.
+
+### Optional paid power-ups
+
+Apollo, ContactOut, and Lemlist plug in if you already pay for them (better enrichment / sequenced sending). The plugin works great without any of them.
 
 ## How it's built (and why it's light)
 

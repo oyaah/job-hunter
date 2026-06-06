@@ -32,7 +32,7 @@ The default send channel is SMTP with a Gmail **App Password** — works on Mac,
 2. https://myaccount.google.com/apppasswords → create one named "job-hunter" → copy the 16-char password.
 3. Enter their Gmail address (`gmail_address`) and the App Password (`gmail_app_password`, stored sensitive). Done — `send_email` works.
 
-**Alternatives** (only if preferred): the OAuth `gmail` channel (Desktop credentials.json from Google Cloud Console; ~weekly re-auth), or `mailapp` on macOS (zero setup, local Mail.app). SMTP is recommended for everyone.
+**Alternatives** (only if preferred): the `local` channel — sends through the desktop mail client the user is already signed into, no keys at all. On macOS (Mail.app) and Windows-with-Outlook it truly **sends**; on Linux and Windows-without-Outlook it opens the message **pre-filled** and the user clicks Send (`send_email` returns `delivery:"composed"` so this is never silent). Or the OAuth `gmail` channel (Desktop credentials.json from Google Cloud Console; ~weekly re-auth). SMTP is recommended for everyone — it's the only zero-touch path on every OS.
 
 ### 6. LinkedIn automation
 LinkedIn actions run through the bundled `linkedin` MCP server (auto-installed via `uvx`). First run, it opens a real browser session for the user to log into LinkedIn once — the session persists at `~/.linkedin-mcp/profile/`, no cookie copying. Confirm the user is okay with automated connection requests + DMs (both still pass the review gate), and set expectations on volume: keep it human-paced (~15-25 connects/day), not bulk — that's what keeps the account safe. Point them at `/job-hunter:watch` (or pairing it with `/loop`) for hands-off acceptance → DM.
