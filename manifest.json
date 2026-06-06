@@ -1,0 +1,49 @@
+{
+  "manifest_version": "0.3",
+  "name": "job-hunter",
+  "display_name": "Job-Hunter",
+  "version": "0.3.0",
+  "description": "Run your whole job-hunt outreach — find the right people, write emails in your voice, work LinkedIn — company after company, with you approving every send.",
+  "author": { "name": "oyaah", "url": "https://github.com/oyaah" },
+  "homepage": "https://github.com/oyaah/job-hunter",
+  "license": "MIT",
+  "server": {
+    "type": "uv",
+    "mcp_config": {
+      "command": "uvx",
+      "args": ["--from", "${__dirname}", "job-hunter-mcp"],
+      "env": {
+        "DATA_DIR": "${HOME}/.config/job-hunter",
+        "HUNTER_API_KEY": "${user_config.hunter_api_key}",
+        "GMAIL_ADDRESS": "${user_config.gmail_address}",
+        "GMAIL_APP_PASSWORD": "${user_config.gmail_app_password}",
+        "APOLLO_API_KEY": "${user_config.apollo_api_key}",
+        "LINKEDIN_DAILY_CAP": "${user_config.linkedin_daily_cap}"
+      }
+    }
+  },
+  "user_config": {
+    "hunter_api_key": {
+      "type": "string", "title": "Hunter.io API key",
+      "description": "Free at hunter.io/api-keys — finds verified emails.",
+      "required": true, "sensitive": true
+    },
+    "gmail_address": {
+      "type": "string", "title": "Your Gmail address",
+      "description": "The address outreach is sent from.", "required": false, "sensitive": false
+    },
+    "gmail_app_password": {
+      "type": "string", "title": "Gmail App Password",
+      "description": "16-char App Password (myaccount.google.com/apppasswords). The simple cross-platform send path.",
+      "required": false, "sensitive": true
+    },
+    "apollo_api_key": {
+      "type": "string", "title": "Apollo API key (optional, paid)",
+      "description": "Optional enrichment fallback.", "required": false, "sensitive": true
+    },
+    "linkedin_daily_cap": {
+      "type": "string", "title": "LinkedIn daily cap",
+      "description": "Max connects/DMs per day (default 40).", "required": false, "sensitive": false
+    }
+  }
+}
