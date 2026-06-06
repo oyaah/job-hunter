@@ -1,6 +1,6 @@
 {
   "name": "job-hunter",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "End-to-end job-hunt cold outreach: target the people who matter, enrich contacts, research them, draft voice-matched emails + LinkedIn DMs, review, and send \u2014 company after company, on the least tokens possible.",
   "author": {
     "name": "oyaah"

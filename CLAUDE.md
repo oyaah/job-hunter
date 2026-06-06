@@ -32,6 +32,9 @@ Model-power-dependent, not prompt-bloated.
 - **Static context is cached.** Resume, prefs, voice profile, learnings load once per session, not per company.
 - **Loop reset between companies.** Carry state through files, not conversation.
 
+### 4. Capability comes from the user's environment — we ship context, not bundled browsers
+The plugin does **not** carry its own browser or GUI driver. The user's Claude Code already provides the capabilities — Claude in Chrome (their logged-in session), `computer-use`, mac automation (osascript / macos-automator). The plugin's job is to supply the **playbook** that tells a smart model how to use whatever it has, plus the few load-bearing tools the model can't be (enrichment HTTP, gated send, voice lint, the honest LinkedIn rate guard). This is why LinkedIn moved off the bundled `linkedin-scraper-mcp` (which loaded ~17 tools into every session) and onto Chrome: lighter, fewer tokens, fewer dependencies, and it reuses the session the user is already in. Channel precedence mirrors Claude's own: **MCP → Bash → Chrome → computer-use** — cheapest reliable tool first, screenshots last. Bundling a heavy server to do what the user's own environment already does is the anti-pattern.
+
 ---
 
 ## Learnings extracted from compound-engineering-plugin & superpowers
@@ -64,7 +67,7 @@ monitors/    opt-in read-only LinkedIn acceptance poller (disabled by default)
 ## Safety rails (the few hard constraints)
 
 1. **No email leaves without explicit human approval.** The review gate is a real gate.
-2. **LinkedIn is automated, but gated and human-paced.** Connection requests and DMs are sent through the bundled `linkedin` MCP server (`mcp__linkedin__connect_with_person` / `send_message`). The connection note + DM still pass the review gate before they go, and DMs are reviewed again after acceptance. Keep volume human-paced (~15-25 connects/day) — LinkedIn tolerates normal activity, not bulk blasting. This is a deliberate reversal of the original semi-auto design, at the user's request; the review gates are what keep it safe.
+2. **LinkedIn is automated, but gated and human-paced.** Connection requests and DMs happen in the **user's own logged-in Chrome** (Claude in Chrome), guided by `references/linkedin-playbook.md` — not a bundled scraper. The connection note + DM still pass the review gate before they go, and DMs are reviewed again after acceptance. `linkedin_guard`/`linkedin_record` are the channel-agnostic daily cap (same call whether Chrome, mac automation, or the opt-in `linkedin-scraper-mcp` fallback). Keep volume human-paced (~15-25 connects/day) — LinkedIn tolerates normal activity, not bulk blasting; the review gates + guard are what keep it safe.
 3. **Never invent an email address.** Gate sends on a `verified` enrichment result; a guessed pattern is a hypothesis, surfaced as such.
 4. **Anti-AI voice lint is non-negotiable** (em/en-dashes, banned openers/words) — on top of the user's learned voice.
 5. **Credit honesty.** Don't fire doomed API calls; tell the user plainly when a provider is exhausted and offer pay/switch/rotate. Account rotation for free credits is flagged as ToS-violating, never silent.

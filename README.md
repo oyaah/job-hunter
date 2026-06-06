@@ -92,10 +92,10 @@ Everything in the required column is **free**. Works on **macOS, Windows, and Li
 | Need | Why | How to get it |
 |------|-----|---------------|
 | **Python 3.12+** | runs the outreach server | [python.org](https://www.python.org/downloads/) (`python3 --version`) |
-| **[uv](https://docs.astral.sh/uv/)** | launches the server + the LinkedIn tool (`uvx`) | `curl -LsSf https://astral.sh/uv/install.sh \| sh` (mac/linux) · `winget install astral-sh.uv` (win) |
+| **[uv](https://docs.astral.sh/uv/)** | launches the outreach server | `curl -LsSf https://astral.sh/uv/install.sh \| sh` (mac/linux) · `winget install astral-sh.uv` (win) |
 | **[Hunter.io](https://hunter.io/api-keys) API key** | finds *verified* emails (no guessing, no bounces) | free tier = 50 lookups/mo, real API |
 | **A way to send mail** | to actually send the outreach | pick one below ↓ |
-| **A LinkedIn account** | for the connect + DM flow | one browser login the first time (see below) |
+| **LinkedIn in Chrome** | for the connect + DM flow | the [Claude in Chrome](https://chromewebstore.google.com/detail/claude/fcoeoabgfenejglbffodgkkbkcdhcgfn) extension + you signed into LinkedIn (see below) |
 
 ### Choosing how you send mail
 
@@ -109,15 +109,36 @@ Everything in the required column is **free**. Works on **macOS, Windows, and Li
 
 > The `local` channel never *pretends* it sent: when it can only pre-fill a draft (Linux, or Windows without Outlook) `send_email` returns `delivery: "composed"` and the plugin tells you to click Send. **SMTP is the only fully hands-off path on every OS** — use it unless you have a reason not to.
 
-### LinkedIn (optional but recommended)
+### LinkedIn — uses *your own* Chrome (no scraper, no extra login)
 
-The bundled `linkedin` tool installs itself via `uvx`. The first time it's used it opens a **real browser window** to log into LinkedIn once; the session is saved to `~/.linkedin-mcp/profile/` (no cookie copying). To pre-authenticate before your first run:
+job-hunter works LinkedIn in **the browser you're already logged into**, not a bundled headless scraper. That means nothing to authenticate separately and no 40MB browser download — and it keeps your default sessions light (the plugin loads zero LinkedIn tools until you act).
 
-```bash
-uvx linkedin-scraper-mcp@latest --login
+Setup, once:
+1. Install the **[Claude in Chrome](https://chromewebstore.google.com/detail/claude/fcoeoabgfenejglbffodgkkbkcdhcgfn)** extension.
+2. Run `/chrome` in Claude Code (or start with `claude --chrome`).
+3. Stay signed into LinkedIn in that Chrome.
+
+That's it. Connection requests and DMs are **gated** (each passes the review gate) and **rate-capped** (`linkedin_daily_cap`, default 40). LinkedIn automation is against their ToS — keep volume human-paced (~15–25 connects/day); that's what keeps an account safe. The full flow lives in [`references/linkedin-playbook.md`](references/linkedin-playbook.md).
+
+<details>
+<summary><b>No Claude-in-Chrome? Opt into the headless fallback</b></summary>
+
+Chrome integration needs a direct Anthropic plan + the extension. Without it, add the bundled headless scraper to your project's `.mcp.json` and the plugin will use it instead:
+
+```json
+{
+  "mcpServers": {
+    "linkedin": {
+      "command": "uvx",
+      "args": ["linkedin-scraper-mcp==4.13.2"],
+      "env": { "UV_HTTP_TIMEOUT": "300" }
+    }
+  }
+}
 ```
 
-Connection requests and DMs are **gated** (each passes the review gate) and **rate-capped** (default 40/day). LinkedIn automation is against their ToS — keep volume human-paced (~15–25 connects/day); that's what keeps an account safe.
+Then pre-authenticate once: `uvx linkedin-scraper-mcp@latest --login` (opens a browser, session saved to `~/.linkedin-mcp/profile/`). The review gate and daily cap are identical to the Chrome path. Note: this package has open upstream bugs (#407/#432/#433).
+</details>
 
 ### Optional paid power-ups
 

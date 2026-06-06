@@ -8,7 +8,7 @@ description: Review pending outreach before it sends — approve, edit, or rejec
 The human gate. Every email and LinkedIn message passes through here before it can send. Drafts live in the company files (`state/*.json`, each contact's `email_draft` / `linkedin`); find the ones whose status isn't `sent`/`approved`.
 
 For each draft, show the user (recipient, subject, body) and take one of:
-- **Approve** → for email: `send_email(to, subject, body, approved=true)` (it voice-lints first; a lint failure means rewrite). For LinkedIn: the note/DM are sent via the LinkedIn MCP after `linkedin_guard` — see hunt/watch. Mark the draft `sent` in the file.
+- **Approve** → for email: `send_email(to, subject, body, approved=true)` (it voice-lints first; a lint failure means rewrite). For LinkedIn: the note/DM are sent in the user's Chrome after `linkedin_guard` — see hunt/watch and `references/linkedin-playbook.md`. Mark the draft `sent` in the file.
 - **Edit** → apply the change in the file, keep it as a draft. **Append the reason to `learnings.md`** (`- <date> [voice] they shortened the intro`). This is the main way the system learns the user's voice.
 - **Reject** → mark rejected in the file; append the reason to `learnings.md`.
 

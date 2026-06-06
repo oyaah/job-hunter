@@ -19,7 +19,7 @@ Create/open `state/<slug>.json`, work it end to end, then move on:
 - **Research** — dispatch `person-researcher` for the top contact; save the digest.
 - **Draft** — dispatch `message-writer` for the email + LinkedIn note + DM; save as drafts.
 - **Review** — hand to the review gate. Nothing sends without approval. Append edits/rejections to `learnings.md`.
-- **Send + LinkedIn** — on approval: `send_email(..., approved=true)`. Then LinkedIn: `linkedin_guard("connect")`; only if `ok`, `mcp__linkedin__connect_with_person`, then `linkedin_record("connect")` and set the contact's `linkedin.status = SENT`.
+- **Send + LinkedIn** — on approval: `send_email(..., approved=true)`. Then LinkedIn: `linkedin_guard("connect")`; only if `ok`, send the connection + reviewed note in the user's Chrome (`references/linkedin-playbook.md`), then `linkedin_record("connect")` and set the contact's `linkedin.status = SENT`.
 - Update `status` in the file and the `pipeline.md` row; next company.
 
 The LinkedIn DM waits for acceptance — the `watch` step (or `/loop`) handles connect→accept→DM. Keep LinkedIn human-paced (the guard enforces a generous daily cap).

@@ -34,8 +34,12 @@ The default send channel is SMTP with a Gmail **App Password** — works on Mac,
 
 **Alternatives** (only if preferred): the `local` channel — sends through the desktop mail client the user is already signed into, no keys at all. On macOS (Mail.app) and Windows-with-Outlook it truly **sends**; on Linux and Windows-without-Outlook it opens the message **pre-filled** and the user clicks Send (`send_email` returns `delivery:"composed"` so this is never silent). Or the OAuth `gmail` channel (Desktop credentials.json from Google Cloud Console; ~weekly re-auth). SMTP is recommended for everyone — it's the only zero-touch path on every OS.
 
-### 6. LinkedIn automation
-LinkedIn actions run through the bundled `linkedin` MCP server (auto-installed via `uvx`). First run, it opens a real browser session for the user to log into LinkedIn once — the session persists at `~/.linkedin-mcp/profile/`, no cookie copying. Confirm the user is okay with automated connection requests + DMs (both still pass the review gate), and set expectations on volume: keep it human-paced (~15-25 connects/day), not bulk — that's what keeps the account safe. Point them at `/job-hunter:watch` (or pairing it with `/loop`) for hands-off acceptance → DM.
+### 6. LinkedIn automation (uses the user's own Chrome)
+LinkedIn runs in the user's **own logged-in Chrome** — no bundled scraper, no cookie copying. Setup: install the **[Claude in Chrome](https://chromewebstore.google.com/detail/claude/fcoeoabgfenejglbffodgkkbkcdhcgfn)** extension, run `/chrome` in Claude Code, and stay signed into LinkedIn in that browser. Then connection requests + DMs happen on the user's real session (both still pass the review gate). The full flow + fallbacks live in `references/linkedin-playbook.md`.
+
+Confirm the user is okay with automated connects + DMs, and set volume expectations: human-paced (~15-25 connects/day), not bulk — that's what keeps the account safe (the `linkedin_guard` daily cap enforces it). Point them at `/job-hunter:watch` (or pairing it with `/loop`) for hands-off acceptance → DM.
+
+**No Chrome integration?** It needs a direct Anthropic plan + the extension. Users without it can opt into the headless fallback (`linkedin-scraper-mcp`) — the README has the one-line `.mcp.json` snippet. The guard + review gate are identical either way.
 
 ## Done
 Summarize what's configured (profile ✓, prefs ✓, voice ✓, which providers, Gmail/Mail.app, LinkedIn posture) and the next step: `/job-hunter:hunt` with a company list.
