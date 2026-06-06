@@ -39,7 +39,7 @@ LinkedIn runs in the user's **own logged-in Chrome** — no bundled scraper, no 
 
 Confirm the user is okay with automated connects + DMs, and set volume expectations: human-paced (~15-25 connects/day), not bulk — that's what keeps the account safe (the `linkedin_guard` daily cap enforces it). Point them at `/job-hunter:watch` (or pairing it with `/loop`) for hands-off acceptance → DM.
 
-**No Chrome integration?** It needs a direct Anthropic plan + the extension. Users without it can opt into the headless fallback (`linkedin-scraper-mcp`) — the README has the one-line `.mcp.json` snippet. The guard + review gate are identical either way.
+**No Chrome integration?** It needs a direct Anthropic plan + the extension. On a **Mac**, the bundled `macos-automator` server is the fallback — it drives the user's real Chrome via AppleScript (open Chrome → LinkedIn → act). It needs Node (for `npx`) and, on first use, macOS **Automation + Accessibility** permission grants (System Settings → Privacy & Security). The guard + review gate are identical either way.
 
 ## Done
 Summarize what's configured (profile ✓, prefs ✓, voice ✓, which providers, Gmail/Mail.app, LinkedIn posture) and the next step: `/job-hunter:hunt` with a company list.

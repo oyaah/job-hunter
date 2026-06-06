@@ -17,6 +17,10 @@
         "GMAIL_CREDENTIALS_PATH": "${user_config.gmail_credentials_path}",
         "LINKEDIN_DAILY_CAP": "${user_config.linkedin_daily_cap}"
       }
+    },
+    "macos_automator": {
+      "command": "npx",
+      "args": ["-y", "--package", "@steipete/macos-automator-mcp", "macos-automator-mcp"]
     }
   }
 }

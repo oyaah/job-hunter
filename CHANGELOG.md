@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1 — 2026-06-06 (remove the scraper for good; wire macos-automator as the mac fallback)
+
+- **Removed `linkedin-scraper-mcp` entirely** — not even an opt-in anymore. The headless Patchright scraper (and its open bugs) is gone from the plugin.
+- **Bundled `macos-automator` (steipete) as the mac fallback** — a thin 3-tool server (`execute_script` / `get_scripting_tips` / `accessibility_query`) that drives the user's **real Chrome** via AppleScript: open Chrome → LinkedIn → do the work. Channel precedence is now **Chrome → macos-automator → computer-use**. Needs Node (`npx`) + macOS Automation/Accessibility permission — documented in the README.
+- All existing functionality unchanged and intact: the `watch` watchdog, the connect→accept→DM loop, `linkedin_guard`/`linkedin_record` rate cap, and every review gate work identically — only the channel underneath LinkedIn changed. Mail send untouched (SMTP / local Mail.app). Removed the now-dead scraper smoke-test script.
+
 ## 0.4.0 — 2026-06-06 (Chrome-first LinkedIn — drive your own browser, unbundle the scraper)
 
 - **LinkedIn now runs in the user's own logged-in Chrome** (Claude in Chrome), guided by a single declarative playbook (`references/linkedin-playbook.md`) — search → connect+note → track acceptance (1st-degree) → DM, all human-reviewed. No bundled browser, no separate login, reuses the session you're already in.

@@ -8,7 +8,7 @@
       "name": "job-hunter",
       "source": "./",
       "description": "End-to-end job-hunt cold outreach automation: target, enrich, research, draft, review, send. Claude Code + Codex portable.",
-      "version": "0.4.0"
+      "version": "0.4.1"
     }
   ]
 }

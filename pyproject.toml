@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "job-hunter-mcp"
-version = "0.4.0"
+version = "0.4.1"
 description = "outreach-mcp server for the job-hunter plugin: contact enrichment, a deterministic anti-AI voice lint, gated cross-platform email send (SMTP / local mail client / Gmail OAuth), and an honest cross-session LinkedIn rate guard."
 readme = "README.md"
 requires-python = ">=3.12"

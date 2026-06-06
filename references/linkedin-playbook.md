@@ -2,21 +2,24 @@
 
 This is context, not a script. You (the model) already know how to use a browser.
 The job here is to do LinkedIn outreach **in the user's own logged-in Chrome** — the
-session they're already signed into — instead of any bundled scraper. Read the goal,
-honor the rails, use judgment.
+session they're already signed into. Read the goal, honor the rails, use judgment.
 
 ## Which tool to use (cheapest reliable first)
 
 1. **Claude in Chrome** (`/chrome`) — the default. The user is already logged into
    LinkedIn there; reuse that session. Open tabs, read the page, click, type.
-2. **macOS automation** — if Chrome integration isn't on but you're on a Mac, you can
-   drive Chrome/Safari via AppleScript through Bash (`osascript`) or a `macos-automator`
-   tool if the user has one. Scriptable, no screenshots, cheap.
-3. **`linkedin-scraper-mcp`** — only if the user opted into the fallback (README tells
-   them how). Tools appear as `mcp__linkedin__*`. Headless, has known upstream bugs;
-   use it only when there's no browser path.
-4. **`computer-use`** — last resort (screenshots + clicks). Slow and token-heavy. Use
-   only when nothing above can reach the page.
+2. **macos-automator** (mac fallback, bundled) — when Chrome integration isn't on but
+   you're on a Mac. Drive the user's real Chrome with AppleScript/JXA, no screenshots:
+   - `get_scripting_tips` first — it has a knowledge base of Chrome/Safari recipes; pull
+     the relevant one instead of hand-writing AppleScript.
+   - `execute_script` to **open/activate Chrome, navigate to the LinkedIn URL** (a search
+     URL like `https://www.linkedin.com/search/results/people/?keywords=<name>%20<company>`,
+     or the person's profile), and act on the page. AppleScript can tell Chrome to run
+     JavaScript in the active tab (`tell application "Google Chrome" ... execute javascript`),
+     which is how you click Connect / fill the note / send — scriptable, deterministic.
+   - `accessibility_query` when a click is easier through the macOS accessibility tree.
+3. **computer-use** — absolute last resort (screenshots + clicks). Slow and token-heavy;
+   you almost never need it for LinkedIn.
 
 If none are available, say so plainly and stop — don't pretend an action happened.
 
@@ -51,7 +54,7 @@ Work **one contact at a time**, off the company state file (`state/<slug>.json`)
   approved that exact text. You are pasting approved content, not writing it live.
 - **The guard is the daily cap.** Always `linkedin_guard(...)` before the action; it's the
   honest cross-session counter and it's channel-agnostic — same call whether you're in
-  Chrome, automator, or the MCP fallback.
+  Chrome, macos-automator, or anything else.
 - **Human-paced.** ~15–25 connects/day is healthy. LinkedIn tolerates normal activity, not
   bulk. The guard enforces the hard cap; you keep the rhythm sane.
 - **Login / CAPTCHA.** Chrome integration pauses and hands control back when it hits a login

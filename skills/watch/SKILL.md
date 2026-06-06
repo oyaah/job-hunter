@@ -14,7 +14,7 @@ The watchdog for the LinkedIn track. Cheap by design: it only looks at contacts 
 4. Surface the DM for a quick review (same gate as email — capture any edit in `learnings.md`).
 5. On approval: `linkedin_guard("message")`; if `ok`, send the reviewed DM in Chrome (per the playbook), then `linkedin_record("message")` and set `linkedin.status = DM_SENT`.
 
-No Chrome integration? The playbook lists the fallbacks (mac automation, the opt-in `linkedin-scraper-mcp`). The guard + review gate are identical no matter the channel.
+No Chrome integration? On a Mac it falls back to `macos-automator` (drives your real Chrome via AppleScript) — see the playbook. The guard + review gate are identical no matter the channel.
 
 ## Hands-off
 Pair with `/loop` on a slow interval (a few hours) so acceptances get picked up without babysitting. Keep the cadence slow — polite to LinkedIn, cheap on tokens. It acts only on real acceptances, one at a time. Keep volume human-paced; the guard enforces the daily cap.

@@ -26,14 +26,15 @@ agents/      worker agents (isolated context, compact returns): target-scout, co
 servers/outreach-mcp/   ONLY load-bearing tools (~8 FastMCP tools); state lives in files
 references/  loaded-on-demand context (voice + targeting templates, enrichment fallback)
 hooks/       SessionStart readiness summary
-.mcp.json    launches outreach (our server) only — LinkedIn rides the user's own Chrome
+.mcp.json    launches outreach (our server) + macos-automator (thin mac fallback) — LinkedIn rides the user's own Chrome
 ```
 
 **Why this shape:** it's the compound-engineering / superpowers convention — skills are the UX surface and stay near-trivial; worker agents do the reasoning in isolated contexts; one MCP server holds the logic so the agent's context stays lean (a fat skill bloats every turn). The same server is framework-agnostic, so the product runs under Claude Code, Codex, and Codex terminal identically; the Claude desktop app is reached later via an `.mcpb` bundle of the same package.
 
-**One bundled MCP server, plus the user's own browser:**
-- `outreach` (ours) — all state, enrichment, email, learnings, LinkedIn lifecycle + rate guard. The only server we auto-load.
-- LinkedIn actions run in the **user's own logged-in Chrome** (Claude in Chrome), guided by `references/linkedin-playbook.md`. The `linkedin-scraper-mcp==4.13.2` backend is an **opt-in headless fallback** the user can add to their `.mcp.json` — not auto-loaded, so the default session carries zero LinkedIn tool schemas. See §LinkedIn for the channel precedence.
+**Two bundled MCP servers, plus the user's own browser:**
+- `outreach` (ours) — all state, enrichment, email, learnings, LinkedIn lifecycle + rate guard.
+- `macos-automator` (steipete, thin 3-tool fallback) — drives the user's real Chrome via AppleScript on macOS when Chrome integration isn't available.
+- LinkedIn actions run in the **user's own logged-in Chrome** (Claude in Chrome), guided by `references/linkedin-playbook.md`. The mac fallback is the bundled **`macos-automator`** server (steipete, `npx`) — a thin 3-tool server that drives the user's real Chrome via AppleScript. No headless scraper is bundled. See §LinkedIn for the channel precedence.
 
 ---
 
@@ -80,7 +81,7 @@ The model drives sequencing (the `hunt` skill gives the arc and the tools, not a
 
 **Published OAuth (the one-click goal).** `gmail.send` is a *sensitive* scope (not restricted) → publishing the OAuth app needs only Google's ~3–5 day brand review, **no CASA security audit**. Plan: ship a single `client_id` (installed-app `client_secret` is public by Google's design; PKCE carries security), so each user just clicks "Allow". Until the app is verified, SMTP/Mail.app cover everyone; OAuth flips on when Google clears it.
 
-**LinkedIn — drive the user's own Chrome, channel-agnostic guard (Chrome-first).** The workflow speaks one contract — `connect / message / accepted` — and the **primary channel is the user's own logged-in Chrome** (Claude in Chrome), guided by `references/linkedin-playbook.md`. We bundle no browser: capability comes from the user's environment. Channel precedence mirrors Claude's own — Chrome → mac automation (osascript / macos-automator) → the opt-in `linkedin-scraper-mcp` headless fallback → computer-use (last resort). What stays **ours regardless of channel** is the production behavior the model can't do itself: the daily rate guard + counters (`linkedin_guard`/`linkedin_record`). Acceptance is detected by reading connection degree (**1st = accepted**) on the profile. **Honest limit:** LinkedIn automation is intrinsically fragile and ToS-adjacent; the design goal is *graceful + channel-swappable + rate-guarded*, not immortal. Driving the user's real session (vs a headless stealth browser) is both lighter and less adversarial to LinkedIn.
+**LinkedIn — drive the user's own Chrome, channel-agnostic guard (Chrome-first).** The workflow speaks one contract — `connect / message / accepted` — and the **primary channel is the user's own logged-in Chrome** (Claude in Chrome), guided by `references/linkedin-playbook.md`. We bundle no browser: capability comes from the user's environment. Channel precedence mirrors Claude's own — Chrome → the bundled `macos-automator` (drives real Chrome via AppleScript on mac) → computer-use (last resort). No headless scraper is bundled. What stays **ours regardless of channel** is the production behavior the model can't do itself: the daily rate guard + counters (`linkedin_guard`/`linkedin_record`). Acceptance is detected by reading connection degree (**1st = accepted**) on the profile. **Honest limit:** LinkedIn automation is intrinsically fragile and ToS-adjacent; the design goal is *graceful + channel-swappable + rate-guarded*, not immortal. Driving the user's real session (vs a headless stealth browser) is both lighter and less adversarial to LinkedIn.
 
 ---
 

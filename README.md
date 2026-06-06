@@ -120,25 +120,11 @@ Setup, once:
 
 That's it. Connection requests and DMs are **gated** (each passes the review gate) and **rate-capped** (`linkedin_daily_cap`, default 40). LinkedIn automation is against their ToS — keep volume human-paced (~15–25 connects/day); that's what keeps an account safe. The full flow lives in [`references/linkedin-playbook.md`](references/linkedin-playbook.md).
 
-<details>
-<summary><b>No Claude-in-Chrome? Opt into the headless fallback</b></summary>
+**Mac fallback (no Claude-in-Chrome):** Chrome integration needs a direct Anthropic plan + the extension. On macOS, the plugin falls back to its bundled **`macos-automator`** server, which drives your *real* Chrome with AppleScript (opens Chrome → LinkedIn → does the work). To enable it you need:
+- **[Node.js](https://nodejs.org)** (provides `npx`, which launches the server) — `node --version` to check.
+- On first use, grant macOS **Automation** and **Accessibility** permission to your terminal/Claude Code: System Settings → Privacy & Security → Automation / Accessibility.
 
-Chrome integration needs a direct Anthropic plan + the extension. Without it, add the bundled headless scraper to your project's `.mcp.json` and the plugin will use it instead:
-
-```json
-{
-  "mcpServers": {
-    "linkedin": {
-      "command": "uvx",
-      "args": ["linkedin-scraper-mcp==4.13.2"],
-      "env": { "UV_HTTP_TIMEOUT": "300" }
-    }
-  }
-}
-```
-
-Then pre-authenticate once: `uvx linkedin-scraper-mcp@latest --login` (opens a browser, session saved to `~/.linkedin-mcp/profile/`). The review gate and daily cap are identical to the Chrome path. Note: this package has open upstream bugs (#407/#432/#433).
-</details>
+Nothing else to configure — same review gate and daily cap as the Chrome path.
 
 ### Optional paid power-ups
 
