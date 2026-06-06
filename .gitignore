@@ -20,5 +20,9 @@ venv/
 *.egg-info/
 .pytest_cache/
 
+# Build artifacts
+dist/
+build/
+
 # OS
 .DS_Store

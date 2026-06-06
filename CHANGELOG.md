@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0 — 2026-06-06 (cross-platform send + real packaging)
+
+- **`local` send channel is now cross-platform** (was macOS-only). macOS Mail.app and Windows Outlook truly **send**; Linux (`xdg-email`/Thunderbird) and Windows-without-Outlook open a **pre-filled compose** window — `send_email` returns `delivery:"composed"` so a draft is never mistaken for a sent message. Injection-safe field passing per OS (osascript argv / PowerShell env vars / separate args). Replaced `mailapp.py` with `integrations/localmail.py`; 7 new tests.
+- **PyPI wheel builds and runs.** hatch `sources` remap installs the flat `servers/outreach-mcp/` tree as the importable `outreach_mcp` package; `job-hunter-mcp` console entry verified in a clean venv. (Upload pending a token; plugin ships via GitHub marketplace.)
+- Version + descriptions aligned to 0.3.0 across plugin.json / manifest.json / .codex-plugin / pyproject. README gains a full per-OS "What you need" section. `dist/`,`build/` gitignored.
+
 ## 0.3.0 — 2026-06-06 (simplification: files over DB)
 
 - **Collapsed 37 MCP tools → 8.** Kept only what the model can't do itself: enrich_contact, verify_email, credits_status (Hunter HTTP), send_email (approved+lint gated), voice_lint, linkedin_guard/record, health.

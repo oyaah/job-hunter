@@ -120,4 +120,4 @@ Net effect: drafts and targets get more "you" over time, and the carried context
 - **LinkedIn fragility** — unofficial automation breaks when LinkedIn changes; mitigated by pin + swappable adapter + clear failure surfacing, not eliminated.
 - **OAuth verification is author-owned** — a Google process, not code; fallbacks cover the interim.
 - **Paid providers (Apollo/ContactOut/Lemlist) not live-tested** — request shapes are correct, logic is mock-tested; verify when seats exist.
-- **Full PyPI package restructure** — the server still runs from a flat module layout; converting to a proper installable package (package-relative imports, schema.sql as package data) is the remaining packaging step before `uvx` distribution is real.
+- **PyPI upload not yet done** — the wheel now builds correctly (`uv build`) and installs/runs as `job-hunter-mcp` via a hatch `sources` remap of the flat `servers/outreach-mcp/` tree to an importable `outreach_mcp` package (verified in a clean venv); the only remaining step is `twine upload` once a PyPI token exists. The plugin itself ships via the GitHub marketplace and runs the server from the flat layout directly.

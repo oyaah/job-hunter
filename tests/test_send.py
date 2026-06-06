@@ -27,9 +27,21 @@ def test_voice_lint_blocks_send():
 
 
 def test_approved_clean_sends(monkeypatch):
-    monkeypatch.setattr(server, "_send_via", lambda ch, to, s, b: "smtp")
+    monkeypatch.setattr(server, "_send_via",
+                        lambda ch, to, s, b: {"channel": "smtp", "delivery": "sent"})
     res = server.send_email("jane@acme.com", "hi", CLEAN, approved=True)
     assert res["status"] == "sent" and res["channel"] == "smtp"
+
+
+def test_composed_local_surfaces_not_sent(monkeypatch):
+    # Linux/Outlook-less paths only *compose* — the user still clicks Send, and the
+    # caller must be told that plainly (status != "sent").
+    monkeypatch.setattr(server, "_send_via",
+                        lambda ch, to, s, b: {"channel": "linux-xdg", "delivery": "composed"})
+    res = server.send_email("jane@acme.com", "hi", CLEAN, approved=True, channel="local")
+    assert res["status"] == "composed"
+    assert res["delivery"] == "composed"
+    assert "click Send" in res["note"]
 
 
 def test_voice_lint_tool():
