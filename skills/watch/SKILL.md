@@ -8,11 +8,21 @@ description: Watchdog for LinkedIn connection acceptances — check who accepted
 The watchdog for the LinkedIn track. Cheap by design: it only looks at contacts actually awaiting acceptance, so it costs almost nothing when there's nothing to do. It works **in the user's own Chrome** — see `references/linkedin-playbook.md` for how (and the fallbacks if Chrome isn't available).
 
 ## What it does
-1. Read the `state/*.json` files for contacts whose `linkedin.status == SENT` (request sent, not yet accepted).
-2. For each, open their profile in Chrome and read the **connection degree**: **1st degree = accepted** (2nd/3rd = still pending). That's the reliable signal — there's no clean "list pending invites" view. If a profile won't load for one, skip it and move on.
+1. Read the `state/*.json` files for contacts whose `linkedin.status == SENT` (request sent, not yet accepted). This is the watch list. If it's empty, say so and stop — nothing to poll.
+2. For each, open their profile in Chrome and read the **connection degree**: **1st degree = accepted** (2nd/3rd = still pending). That's the reliable signal — there's no clean "list pending invites" view. If a profile won't load for one, mark it `unknown` and move on. Drive Chrome **inline and fast**: one `browser_batch` per profile (`navigate` → short `wait` → `find "connection degree / Pending button"`) — degree reads don't need trusted input, so this is cheap and never blocked. Don't spawn a sub-agent for a degree check.
 3. For anyone now 1st-degree: set their `linkedin.status = DM_REVIEW` in the file. If the prepared DM is thin or stale, dispatch `message-writer` to draft a fresh one from their now-richer profile.
 4. Surface the DM for a quick review (same gate as email — capture any edit in `learnings.md`).
 5. On approval: `linkedin_guard("message")`; if `ok`, send the reviewed DM in Chrome (per the playbook), then `linkedin_record("message")` and set `linkedin.status = DM_SENT`.
+
+## Make it visible
+Always print a short status table so the user sees exactly where the watchdog stands — this is a watchdog they can watch:
+
+| Contact | Company | Was | Now | Action |
+|---------|---------|-----|-----|--------|
+| Kshitij Gupta | Acme | SENT | 1st ✅ accepted | → DM_REVIEW |
+| Hello World | Beta | SENT | 2nd ⏳ pending | (no change) |
+
+Then state the next step in one line (e.g. "1 acceptance — drafting Kshitij's DM for your review" or "0 acceptances, 2 still pending — will re-check next run").
 
 No Chrome integration? On a Mac it falls back to `macos-automator` (drives your real Chrome via AppleScript) — see the playbook. The guard + review gate are identical no matter the channel.
 

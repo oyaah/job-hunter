@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.2 — 2026-06-06 (pick-one send method + visible watchdog + faster Chrome)
+
+- **One send method, chosen at setup (`send_method` userConfig) — no stacking.** Three options the user picks between: **`gmail_mcp`** (install an already-available Gmail MCP into your own Claude Code; job-hunter delegates the send to it — recommended), **`mac_automation`** (macOS only — send via Mail.app `osascript` automation, **no MCP, no keys**), or **`app_password`** (Gmail App Password over SMTP, every OS). `send_email channel="auto"` resolves to the chosen method; for `gmail_mcp` it returns `status:"delegate"` so the model completes the send through the user's MCP. Review gate (voice lint + human approval) holds for all three.
+- **Watchdog is now visible + faster.** `watch` prints a status table (Contact · Was · Now · Action) so you can actually see acceptances flip, and drives Chrome **inline** with one `browser_batch` per degree-check instead of spawning a sub-agent. Live-tested end to end: connection request → accept → 1st-degree detection.
+- **Faster Chrome driving** documented in `references/linkedin-playbook.md`: batch predictable step sequences into single `browser_batch` round trips; prefer element refs over pixel coordinates. Skills (review/setup/watch) updated for the pick-one model. No enrichment/guard/lint logic changed; no new bundled MCP (the Mac path is plain automation, in keeping with "capability comes from the user's environment").
+
 ## 0.4.1 — 2026-06-06 (remove the scraper for good; wire macos-automator as the mac fallback)
 
 - **Removed `linkedin-scraper-mcp` entirely** — not even an opt-in anymore. The headless Patchright scraper (and its open bugs) is gone from the plugin.

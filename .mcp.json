@@ -7,6 +7,7 @@
       ],
       "env": {
         "DATA_DIR": "${CLAUDE_PLUGIN_DATA}",
+        "SEND_METHOD": "${user_config.send_method}",
         "HUNTER_API_KEY": "${user_config.hunter_api_key}",
         "APOLLO_API_KEY": "${user_config.apollo_api_key}",
         "CONTACTOUT_API_KEY": "${user_config.contactout_api_key}",

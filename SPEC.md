@@ -72,12 +72,12 @@ The model drives sequencing (the `hunt` skill gives the arc and the tools, not a
 
 **Enrichment — credit-gated fallback chain (Hunter → Apollo → ContactOut).** `enrich_contact` walks the chain, pre-flight credit-checks each provider (never fires a doomed call), and **gates on a verified email** — a guessed pattern is surfaced as a hypothesis, never returned as verified. Only Hunter is free-usable today (real free API + balance endpoint); Apollo/ContactOut/Lemlist are optional paid backends. Why a chain not parallel fan-out: conserves credits and tokens. Live-tested against the real Hunter API.
 
-**Email — `auto` channel, three backends:**
-1. **SMTP + Gmail App Password** — stdlib `smtplib`, works on every OS and harness, no OAuth. The cross-platform default.
-2. **macOS Mail.app** — AppleScript via `osascript` argv (injection-safe), zero credentials, uses the already-signed-in account. The friction-free Mac path (live-tested).
-3. **Gmail OAuth API** — for the published one-click flow (see below).
+**Email — the user picks ONE method at setup (`send_method`), no stacking:**
+1. **`gmail_mcp`** (recommended) — the user installs an already-available Gmail MCP into their own Claude Code; job-hunter delegates the send to it. `send_email channel="auto"` returns `status:"delegate"` (this server can't call another MCP), and the model completes the send through the user's MCP. Best deliverability, proper threads, nothing stored here.
+2. **`mac_automation`** (macOS only) — Mail.app via `osascript` argv (injection-safe), zero credentials, the already-signed-in account. No MCP, no keys — just an Automation permission grant. Live-tested.
+3. **`app_password`** — SMTP + Gmail App Password, stdlib `smtplib`, every OS and harness, no OAuth. The simple cross-platform option.
 
-`send_email channel="auto"` resolves to SMTP if configured, else Mail.app on macOS, else OAuth. The **approval gate is enforced at the tool layer**: `send_email` atomically claims `approved→sending` so it can't double-send, and reverts on failure. No message leaves unless `approved`.
+`send_email channel="auto"` resolves to the chosen method (`gmail_mcp→delegate`, `mac_automation→local/osascript`, `app_password→smtp`); with no choice set it falls back to whatever's actually configured (SMTP → local → OAuth). The OAuth `gmail` channel and `local` on Windows/Linux remain as manual overrides. The **approval gate is enforced at the tool layer** for the methods this server sends itself: `send_email` requires `approved=True`, voice-lints, and surfaces `delivery: sent | composed | delegate` honestly — a draft is never reported as delivered.
 
 **Published OAuth (the one-click goal).** `gmail.send` is a *sensitive* scope (not restricted) → publishing the OAuth app needs only Google's ~3–5 day brand review, **no CASA security audit**. Plan: ship a single `client_id` (installed-app `client_secret` is public by Google's design; PKCE carries security), so each user just clicks "Allow". Until the app is verified, SMTP/Mail.app cover everyone; OAuth flips on when Google clears it.
 

@@ -74,6 +74,15 @@ def _gmail_creds_path():
 def _resolve_channel(channel):
     if channel != "auto":
         return channel
+    # The user picks ONE send method at setup (userConfig send_method).
+    method = (os.environ.get("SEND_METHOD") or "").strip().lower()
+    if method == "gmail_mcp":
+        return "gmail_mcp"      # handled by the model via its own Gmail MCP, not here
+    if method == "mac_automation":
+        return "local"         # osascript → Mail.app, no MCP, no keys
+    if method == "app_password":
+        return "smtp"
+    # No explicit choice → fall back to whatever's actually configured.
     from integrations import smtp_send, localmail
     if smtp_send.configured():
         return "smtp"
@@ -86,6 +95,10 @@ def _send_via(channel, to, subject, body):
     """Returns {"channel": str, "delivery": "sent"|"composed"}. "composed" means the
     local mail client opened pre-filled and the USER still has to click Send."""
     channel = _resolve_channel(channel)
+    if channel == "gmail_mcp":
+        # The user chose to send through a Gmail MCP they installed in Claude Code.
+        # This server can't call another MCP — signal the model to do the send itself.
+        return {"channel": "gmail_mcp", "delivery": "delegate"}
     if channel in ("local", "mailapp"):  # "mailapp" kept as a back-compat alias
         from integrations import localmail
         res = localmail.send(to, subject, body)
@@ -104,9 +117,14 @@ def send_email(to: str, subject: str, body: str, approved: bool = False,
                channel: str = "auto") -> dict:
     """Send an email. BLOCKED unless approved=True (the review gate sets this only after
     human approval).
-    channel = auto (smtp→local→gmail) | smtp | local | gmail. The local channel uses
-    the desktop mail client; on Linux (and Windows without Outlook) it opens the
-    message pre-filled and returns delivery='composed' — you still click Send.
+
+    The user picks ONE send method at setup (userConfig send_method), and channel="auto"
+    honors it: 'gmail_mcp' → returns delivery='delegate' (YOU send via the user's own
+    Gmail MCP, since this server can't call another MCP); 'mac_automation' → Mail.app via
+    osascript (macOS, no keys); 'app_password' → SMTP. You can also force a channel:
+    auto | smtp | local | gmail. The 'local' channel uses the desktop mail client; on
+    Linux (and Windows without Outlook) it opens the message pre-filled and returns
+    delivery='composed' — you still click Send.
     The body is voice-linted first; lint failures block the send."""
     if not approved:
         return {"error": "send blocked — approved is false. Show the draft, get explicit "
@@ -121,6 +139,12 @@ def send_email(to: str, subject: str, body: str, approved: bool = False,
     except Exception as e:  # noqa: BLE001
         return {"status": "error", "detail": str(e),
                 "hint": "Set GMAIL_ADDRESS/GMAIL_APP_PASSWORD, or use channel='local'."}
+    if used["delivery"] == "delegate":
+        return {"status": "delegate", "to": to, "channel": "gmail_mcp",
+                "subject": subject, "body": body,
+                "note": "send_method=gmail_mcp — this draft is approved + voice-linted. "
+                        "Send it now via the user's installed Gmail MCP (its send/create-message "
+                        "tool), then mark the draft sent. Do NOT re-lint or re-ask approval."}
     status = "sent" if used["delivery"] == "sent" else "composed"
     out = {"status": status, "to": to, "channel": used["channel"], "delivery": used["delivery"]}
     if used["delivery"] == "composed":
@@ -159,6 +183,7 @@ def health() -> dict:
     channels are available, the LinkedIn daily count. Surfaces no secrets."""
     out = {"credentials": {k: bool(os.environ.get(f"{k.upper()}_API_KEY"))
                            for k in ("hunter", "apollo", "contactout", "lemlist")},
+           "send_method": (os.environ.get("SEND_METHOD") or "unset"),
            "email_channels": [], "linkedin_today": guard.used_today("connect")}
     try:
         from integrations import smtp_send, localmail

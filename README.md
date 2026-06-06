@@ -98,7 +98,7 @@ The most hands-off version runs the whole arc — find → enrich → research �
 | 1 | **[Claude Code](https://docs.claude.com/en/docs/claude-code)** + a direct Anthropic plan (Pro/Max) | runs the plugin; the plan unlocks the Chrome integration | plan is paid |
 | 2 | **Python 3.12+** | runs the outreach server (`python3 --version`) | ✅ |
 | 3 | **[Hunter.io](https://hunter.io/api-keys) API key** | finds *verified* emails — no guessing, no bounces | ✅ 50/mo |
-| 4 | **A send channel** — a Gmail **[App Password](https://myaccount.google.com/apppasswords)** (recommended) | so email actually sends, hands-off, on any OS | ✅ |
+| 4 | **A send method (pick one)** — a **Gmail MCP** you add to Claude Code (best), **`mac_automation`** on a Mac (no keys), or a Gmail **[App Password](https://myaccount.google.com/apppasswords)** | so email actually sends, hands-off — see "Choosing how you send mail" | ✅ |
 | 5 | **[Claude in Chrome](https://chromewebstore.google.com/detail/claude/fcoeoabgfenejglbffodgkkbkcdhcgfn) extension** + signed into LinkedIn in that Chrome | LinkedIn runs in *your* real session — trusted clicks, no scraper | ✅ |
 | 6 | *(mac fallback)* **[Node.js](https://nodejs.org)** | powers the `macos-automator` fallback that drives Chrome when the extension isn't available | ✅ |
 
@@ -114,7 +114,7 @@ The most hands-off version runs the whole arc — find → enrich → research �
 #    → keep a Chrome window signed into LinkedIn
 
 # c. run the guided setup — it walks you through the rest
-/job-hunter:setup            # resume · your writing voice · Hunter key · Gmail App Password
+/job-hunter:setup            # resume · your writing voice · Hunter key · pick your send method
 ```
 
 **Grant the mac permissions** (only needed for the `macos-automator` fallback, and asked for on first use): System Settings → Privacy & Security → **Automation** *and* **Accessibility** → enable **your terminal app** (whatever runs Claude Code — e.g. Ghostty, Terminal, iTerm) for **Google Chrome** and **System Events**; and in Chrome, **View → Developer → Allow JavaScript from Apple Events**.
@@ -139,19 +139,29 @@ Want it truly hands-off? Pair the watcher with `/loop` on a slow cadence so acce
 
 ---
 
-## Choosing how you send mail
+## Choosing how you send mail — pick one of three
 
-SMTP with a Gmail App Password is the only fully hands-off path on every OS — use it unless you have a reason not to.
+At setup you choose **one** send method (`send_method`). That's it — no stacking, no precedence to reason about.
 
-| Channel | OS | Setup | Behaviour |
-|---------|-----|-------|-----------|
-| **SMTP** *(recommended)* | mac / win / linux | a Gmail **[App Password](https://myaccount.google.com/apppasswords)** (enable 2FA first) | **sends** silently, zero-touch, no token expiry |
-| **`local`** | macOS | nothing — uses Mail.app you're already signed into | **sends** via Mail.app |
-| **`local`** | Windows | nothing if **Outlook** is installed & configured | Outlook → **sends**; otherwise opens your default client **pre-filled** (you click Send) |
-| **`local`** | Linux | nothing — uses `xdg-email` / Thunderbird | opens a compose window **pre-filled** (you click Send) |
-| **Gmail OAuth** | mac / win / linux | a Desktop `credentials.json` from Google Cloud | **sends**; re-auth ~weekly (Testing mode) |
+| Choose | What it is | OS | Keys / setup |
+|--------|-----------|-----|--------------|
+| **`gmail_mcp`** *(recommended)* | install an **already-available Gmail MCP** into your own Claude Code; job-hunter sends through it | any | the MCP's own OAuth — nothing stored in job-hunter |
+| **`mac_automation`** | send via **Mail.app automation** (`osascript`) — **no MCP, no keys** | macOS only | grant Automation permission once (below) |
+| **`app_password`** | a Gmail **[App Password](https://myaccount.google.com/apppasswords)** over SMTP | mac / win / linux | enable 2FA → create app password → enter it |
 
-The `local` channel never *pretends* it sent: when it can only pre-fill a draft (Linux, or Windows without Outlook) `send_email` returns `delivery: "composed"` and tells you to click Send.
+`gmail_mcp` is the nicest (you own it, best deliverability, proper threads). `mac_automation` is the zero-setup Mac path — it just drives the Mail.app you're already signed into. `app_password` is the one dead-simple cross-platform option.
+
+### 🔧 Robot Requirements — `mac_automation` only
+
+Only relevant if you pick the macOS Mail.app option. No Node, no MCP — just a permission grant.
+
+- **macOS** — this option is an Apple-only party 🍎 (everyone else picks `gmail_mcp` or `app_password`).
+
+> ⚠️ **Permission to automate (your Mac's trust issues):** the app running Claude Code (your terminal) needs macOS permission to control Mail.
+> - **Automation:** System Settings → Privacy & Security → **Automation** → find your terminal app → tick **Mail**.
+> - The **first** send may still pop a one-time macOS confirmation even when pre-authorized — that's normal; approve it once. job-hunter can't grant these for you.
+>
+> (Driving LinkedIn via the `macos-automator` fallback additionally needs **Accessibility** — a separate grant, documented in the Full Automation section above.)
 
 ## Optional paid power-ups
 
@@ -165,6 +175,7 @@ The best Claude plugins win by trusting the model and giving it only the tools i
 
 - **The model drives everything through plain files it edits directly** — your pipeline, learnings, and voice profile are just markdown/JSON you can open and read. State is files, not a database.
 - **Capability comes from your own environment.** The plugin ships *context* (a LinkedIn playbook) and a handful of load-bearing tools, not a bundled browser. LinkedIn rides your Chrome; mac scripting rides the thin `macos-automator` server. Channel precedence mirrors Claude's own: **Chrome → macos-automator → computer-use**, cheapest reliable first.
+- **You pick how mail sends, once.** A Gmail MCP you already trust, plain Mail.app automation on a Mac, or an App Password — one choice at setup, no bundled mail server. Same principle: lean on what you already have.
 - **Real code exists only for what the model can't do itself** — verified email lookup, gated mail send, the anti-AI voice lint, and an honest cross-session LinkedIn rate limit. **8 small tools, no database, zero LinkedIn tools loaded until you act.**
 
 See [`SPEC.md`](SPEC.md) for the full design, [`CLAUDE.md`](CLAUDE.md) for the philosophy, and [`references/linkedin-playbook.md`](references/linkedin-playbook.md) for exactly how it works LinkedIn.

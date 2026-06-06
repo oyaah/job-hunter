@@ -21,6 +21,22 @@ Connect / Message / Send controls — it checks `event.isTrusted`. So:
 If neither trusted path is available, do the reading/disambiguation, prep the draft, and
 tell the user to do the final click — never pretend it sent.
 
+## Go fast: batch the steps
+
+When you have Claude in Chrome, drive it **inline** with `browser_batch` — pack the predictable
+sequence into one round trip instead of one tool call per step. Typical batches:
+
+- **Open + confirm a person:** `[navigate, wait 1.5s, screenshot, find "Message/Connect button"]`.
+- **Connect:** `[left_click <Connect ref>, wait 1.5s, screenshot]` → then `[left_click "Send without a note" | type note + click Send, screenshot]`.
+- **DM:** `[left_click <Message ref>, screenshot]` → `[left_click <composer>, type <reviewed text>, screenshot]` (leave Enter to the gate/user as agreed).
+- **Acceptance check:** `[navigate, wait, find "Pending button / connection degree"]`.
+
+Prefer **element refs** from `find`/`read_page` over pixel coordinates — LinkedIn's layout shifts and
+a ref click lands every time; coordinates drift after scroll. If the extension drops mid-batch
+("extension disconnected"), it's usually transient — `list_connected_browsers`, `select_browser`, retry.
+Reading/searching never needs trusted input, so batch those freely; only the click/type/send steps
+need the trusted path above.
+
 ## How LinkedIn is laid out (so you move fast, no fumbling)
 
 - **People search:** `https://www.linkedin.com/search/results/people/?keywords=<name>%20<company>`.

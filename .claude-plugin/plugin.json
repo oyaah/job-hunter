@@ -1,6 +1,6 @@
 {
   "name": "job-hunter",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "End-to-end job-hunt cold outreach: target the people who matter, enrich contacts, research them, draft voice-matched emails + LinkedIn DMs, review, and send \u2014 company after company, on the least tokens possible.",
   "author": {
     "name": "oyaah"
@@ -38,10 +38,16 @@
       "description": "From Lemlist Settings \u2192 Integrations. No free tier. Enables sequenced sending. Leave blank to use Gmail only.",
       "sensitive": true
     },
+    "send_method": {
+      "type": "string",
+      "title": "How to send email (pick one)",
+      "description": "gmail_mcp = use a Gmail MCP you installed in Claude Code (recommended; nothing to store here). mac_automation = macOS only, send via Mail.app automation, no MCP and no keys. app_password = a Gmail App Password over SMTP (works on every OS). Default: app_password.",
+      "sensitive": false
+    },
     "gmail_address": {
       "type": "string",
-      "title": "Your Gmail address",
-      "description": "The address outreach is sent from (SMTP, the default send channel). e.g. you@gmail.com",
+      "title": "Your Gmail address (only for app_password)",
+      "description": "The address outreach is sent from when send_method = app_password. e.g. you@gmail.com",
       "sensitive": false
     },
     "gmail_app_password": {

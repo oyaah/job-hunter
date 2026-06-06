@@ -26,13 +26,19 @@ The plugin prompts for these as sensitive `userConfig` at enable-time (keychain-
 - **Apollo / ContactOut / Lemlist** (optional, paid) — toggle on only if the user has a seat. Tell them honestly: Apollo API enrichment needs a paid plan; Lemlist has no free tier; ContactOut has no self-serve API.
 Check balances with `credits_status` (it polls Hunter's real balance endpoint).
 
-### 5. Email sending (SMTP App Password — the simple default)
-The default send channel is SMTP with a Gmail **App Password** — works on Mac, Windows, and Linux, under Claude Code / Codex / anywhere, no OAuth, no token expiry. Walk the user through:
-1. Enable 2-Step Verification on their Google account (required for App Passwords).
-2. https://myaccount.google.com/apppasswords → create one named "job-hunter" → copy the 16-char password.
-3. Enter their Gmail address (`gmail_address`) and the App Password (`gmail_app_password`, stored sensitive). Done — `send_email` works.
+### 5. Email sending — make the user pick ONE of three
+This is a choice, not a stack. Present the three options, let the user pick, and record it as `send_method` (userConfig). Everything after honors that one choice.
 
-**Alternatives** (only if preferred): the `local` channel — sends through the desktop mail client the user is already signed into, no keys at all. On macOS (Mail.app) and Windows-with-Outlook it truly **sends**; on Linux and Windows-without-Outlook it opens the message **pre-filled** and the user clicks Send (`send_email` returns `delivery:"composed"` so this is never silent). Or the OAuth `gmail` channel (Desktop credentials.json from Google Cloud Console; ~weekly re-auth). SMTP is recommended for everyone — it's the only zero-touch path on every OS.
+**Option A — `gmail_mcp` (recommended).** The user installs an **already-available Gmail MCP** into their own Claude Code (their pick of which one), authorizes it, and job-hunter sends through it — real Gmail API, proper threading, from their actual account, nothing stored here. Confirm it shows in `/mcp`. At send time `send_email` returns `status:"delegate"` and you complete the send via that MCP's tool.
+
+**Option B — `mac_automation` (macOS only, no MCP, no keys).** Skip all of that: send through the **Mail.app** account they're already signed into, via `osascript` automation built into the outreach server. Zero credentials. Needs macOS **Automation** permission for the terminal app to control **Mail** (System Settings → Privacy & Security → Automation; the first send may pop a one-time confirm). `send_email` truly sends.
+
+**Option C — `app_password` (any OS).** One Gmail **App Password** over SMTP — dead simple, cross-platform, no OAuth:
+1. Enable 2-Step Verification (required for App Passwords).
+2. https://myaccount.google.com/apppasswords → create one named "job-hunter" → copy the 16-char password.
+3. Enter `gmail_address` + `gmail_app_password` (sensitive). Done.
+
+Set `send_method` to their choice. Steer them: **A** for the best experience, **B** if they're on a Mac and want zero keys/zero setup, **C** for one simple cross-platform path. (The OAuth `gmail` channel and `channel="local"` on Windows/Linux still exist as manual overrides, but the three above are the supported choices.)
 
 ### 6. LinkedIn automation (uses the user's own Chrome)
 LinkedIn runs in the user's **own logged-in Chrome** — no bundled scraper, no cookie copying. Setup: install the **[Claude in Chrome](https://chromewebstore.google.com/detail/claude/fcoeoabgfenejglbffodgkkbkcdhcgfn)** extension, run `/chrome` in Claude Code, and stay signed into LinkedIn in that browser. Then connection requests + DMs happen on the user's real session (both still pass the review gate). The full flow + fallbacks live in `references/linkedin-playbook.md`.
