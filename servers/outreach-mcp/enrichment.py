@@ -1,10 +1,11 @@
-"""Enrichment orchestration — the credit-gated fallback chain (KTD5, R3, R11).
+"""Enrichment orchestration — the credit-gated fallback chain (Hunter → Apollo →
+ContactOut). Pre-flight credit-checks each provider so it never fires a doomed
+call, gates acceptance on a VERIFIED email, and never returns a guessed address as
+final. Returns the result to the caller (the model writes it into the company
+file) — no DB. Provider adapters live in `_ADAPTERS` so tests swap them sans HTTP."""
+import sys
 
-Walks Hunter → Apollo → ContactOut, pre-flight credit-checking each so it never
-fires a doomed call, gating acceptance on a VERIFIED email and never returning a
-guessed address as final. Provider adapters live in `_ADAPTERS` so tests can
-swap them without HTTP."""
-import credits
+import usage
 
 ACCEPT_SCORE = 70  # Hunter confidence threshold for "verified enough"
 COST = {"hunter": 1, "apollo": 1, "contactout": 1}
@@ -52,42 +53,36 @@ def _adapt_contactout(contact, domain):
 _ADAPTERS = {"hunter": _adapt_hunter, "apollo": _adapt_apollo, "contactout": _adapt_contactout}
 
 
-def enrich(conn, contact, domain):
-    """Resolve a verified email (+phone if available) through the chain.
-
+def enrich(contact, domain):
+    """Resolve a verified email (+phone if available) for one contact via the chain.
     Returns one of:
       {status:'verified', email, phone, source}
-      {status:'unverified', email, source}   # best guess, no verified hit
-      {status:'needs_credits', detail}       # every provider exhausted/uncredited
-      {status:'no_match'}                    # providers ran but found nothing
+      {status:'unverified', email, source}   # best guess, never treated as verified
+      {status:'needs_credits', detail}
+      {status:'no_match'}
     """
-    import sys
     from integrations import CreditError
 
     best_guess = None
     ran_any = False
     any_credits = False
-    for service, _ in credits.CHAINS["email_find"]:
+    for service, _ in usage.CHAINS["email_find"]:
         if service not in _ADAPTERS:
             continue
         cost = COST.get(service, 1)
-        account = credits.usable_account(conn, service, cost)
-        if account is None:
+        if not usage.usable(service, cost):
             continue
         any_credits = True
         try:
             result = _ADAPTERS[service](contact, domain)
         except CreditError:
-            # Exhaustion → mark this account exhausted and advance the chain.
-            credits.mark_exhausted(conn, service, account)
+            usage.mark_exhausted(service)
             continue
         except Exception as e:  # noqa: BLE001
-            # A real provider/transport error (timeout, bad response, config). Skip
-            # this provider but make the failure visible — never silently no_match.
             print(f"[job-hunter] enrich via {service} failed: {e!r}", file=sys.stderr)
             continue
         ran_any = True
-        credits.record(conn, service, account, "email_find", cost, contact.get("id"))
+        usage.record(service, cost)
         if result is None:
             continue
         if result["verified"]:

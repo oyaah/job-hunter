@@ -52,13 +52,13 @@ This plugin deliberately copies the patterns that make those plugins good:
 ```
 skills/      thin slash-commands (context + dispatch)
 agents/      worker agents (isolated context, compact returns)
-servers/outreach-mcp/   ALL logic + state + credits + learnings (FastMCP)
+servers/outreach-mcp/   ONLY load-bearing tools (~8): the few things the model can't do itself
 references/  loaded-on-demand context (voice + targeting templates)
 hooks/       SessionStart summary (pipeline + credits + learnings)
 monitors/    opt-in read-only LinkedIn acceptance poller (disabled by default)
 ```
 
-- **State, credits, and learnings live in SQLite** at `${CLAUDE_PLUGIN_DATA}/job-hunter.db`. Never in the plugin dir (wiped on update).
+- **State lives in files, not a database.** Per-company state (`state/<slug>.json`), the pipeline board (`pipeline.md`), learnings (`learnings.md`), and the voice/targeting profiles are plain files under `${CLAUDE_PLUGIN_DATA}` that the model edits directly with Read/Write/Edit. The only persistence code owns is two JSON counters (`usage.json` credit balance, `li-actions.json` daily LinkedIn count) via a tiny kvstore. No SQLite. The ~8 tools are only the things the model genuinely cannot do: authenticated HTTP enrichment, gated mail send, deterministic voice lint, the honest cross-session rate guard. See `references/state-file.template.md`.
 - **Secrets** via `userConfig sensitive` → env vars → OS keychain. Never in repo/git/plugin.json. The MCP server reads keys from env, so Codex works with plain env vars too.
 
 ## Safety rails (the few hard constraints)

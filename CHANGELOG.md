@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0 — 2026-06-06 (simplification: files over DB)
+
+- **Collapsed 37 MCP tools → 8.** Kept only what the model can't do itself: enrich_contact, verify_email, credits_status (Hunter HTTP), send_email (approved+lint gated), voice_lint, linkedin_guard/record, health.
+- **State is files, not SQLite.** Per-company state (`state/<slug>.json`), pipeline board (`pipeline.md`), learnings (`learnings.md`), and voice/targeting profiles are files the model edits directly. Deleted store/state/credits/learnings/distill/linkedin_adapter + the whole DB layer.
+- **kvstore** (atomic JSON) backs the only two counters code owns: credit balance + daily LinkedIn count.
+- **Self-evolving via files:** learnings append to a file; reflection = the model rewriting the profile files. Same loop, no bookkeeping tools.
+- Skills + agents rewritten to drive files. Automation arc (target→enrich→draft→review→send→LinkedIn→watch→DM) and all safety rails preserved. 30 focused tests.
+
+
 ## 0.2.0 — 2026-06-05 (productionization, in progress)
 
 - **Concurrency:** thread-local SQLite connections over WAL — safe under FastMCP worker-thread dispatch (was a single shared connection that could crash / lose writes).

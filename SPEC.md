@@ -23,7 +23,7 @@ Three properties follow from that bet and shape the whole system:
 ```
 skills/      thin slash-commands (context + dispatch): setup, hunt, target, draft, review, watch, reflect, status
 agents/      worker agents (isolated context, compact returns): target-scout, contact-enricher, person-researcher, message-writer
-servers/outreach-mcp/   ALL logic + state + credits + learnings (one FastMCP server, 37 tools)
+servers/outreach-mcp/   ONLY load-bearing tools (~8 FastMCP tools); state lives in files
 references/  loaded-on-demand context (voice + targeting templates, enrichment fallback)
 hooks/       SessionStart readiness summary
 .mcp.json    launches outreach (our server) + linkedin (bundled backend)
@@ -39,7 +39,7 @@ hooks/       SessionStart readiness summary
 
 ## 3. Data model
 
-SQLite (WAL) at `${DATA_DIR}/job-hunter.db`. Concurrency: each FastMCP worker thread gets its **own** connection to the same WAL DB via a thread-local proxy — the correct SQLite concurrency model — so the 37 tools share one `_conn` object with no per-tool changes.
+**State is files, not a database** (the career-ops pattern — a 49k⭐ tool runs its whole pipeline as markdown). Per-company state is `state/<slug>.json`; the board is `pipeline.md`; learnings are `learnings.md`; the distilled profiles are `voice-profile.md` / `targeting-prefs.md`. The model reads and writes these directly with built-in Read/Write/Edit — there are no state tools. The only persistence code owns is two JSON counters (Hunter credit balance in `usage.json`, the daily LinkedIn count in `li-actions.json`) via a ~20-line kvstore with atomic writes.
 
 | Table | Holds | Notes |
 |-------|-------|-------|

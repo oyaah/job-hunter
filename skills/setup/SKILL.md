@@ -7,7 +7,7 @@ description: Onboard a user into job-hunter — ingest resume, capture targeting
 
 Guided onboarding. Walk the user through each step, confirm before moving on, and write results to the outreach store + `${CLAUDE_PLUGIN_DATA}`. Keep it conversational — this is the only high-touch step; everything after is automated.
 
-> These steps are a checklist of what to capture, not a rigid script. Read the user, skip what doesn't apply, go deeper where they have strong opinions. Whenever the user states a preference about how they want outreach done ("I never want X", "always lead with Y"), record it with `learning_record` — that's how the system starts tuning to them from minute one.
+> These steps are a checklist of what to capture, not a rigid script. Read the user, skip what doesn't apply, go deeper where they have strong opinions. Whenever the user states a preference about how they want outreach done ("I never want X", "always lead with Y"), append it to `learnings.md` — that's how the system starts tuning to them from minute one.
 
 ## Steps
 
@@ -24,7 +24,7 @@ This is what stops outreach sounding like AI. Ask for **2-3 of the user's real p
 The plugin prompts for these as sensitive `userConfig` at enable-time (keychain-stored). Confirm which the user actually has:
 - **Hunter.io** (free tier, required) — the default enrichment provider.
 - **Apollo / ContactOut / Lemlist** (optional, paid) — toggle on only if the user has a seat. Tell them honestly: Apollo API enrichment needs a paid plan; Lemlist has no free tier; ContactOut has no self-serve API.
-Seed each enabled service's credit row via `credits_seed` (poll the balance endpoint where available, e.g. Hunter `/v2/account`).
+Check balances with `credits_status` (it polls Hunter's real balance endpoint).
 
 ### 5. Email sending (SMTP App Password — the simple default)
 The default send channel is SMTP with a Gmail **App Password** — works on Mac, Windows, and Linux, under Claude Code / Codex / anywhere, no OAuth, no token expiry. Walk the user through:

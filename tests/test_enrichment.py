@@ -1,21 +1,18 @@
-"""U5 — enrichment fallback chain. Providers mocked via enrichment._ADAPTERS."""
+"""Enrichment fallback chain (file-backed usage). Providers mocked via _ADAPTERS."""
 import os
 import sys
+import tempfile
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "servers", "outreach-mcp"))
 
-import store  # noqa: E402
-import credits  # noqa: E402
 import enrichment  # noqa: E402
+import usage  # noqa: E402
 
-CONTACT = {"id": 1, "name": "Jane Doe", "linkedin_url": "https://linkedin.com/in/jane"}
+CONTACT = {"name": "Jane Doe", "linkedin_url": "https://linkedin.com/in/jane"}
 
 
-def conn_with(**seeds):
-    conn = store.connect(":memory:")
-    for svc, kw in seeds.items():
-        credits.seed(conn, svc, **kw)
-    return conn
+def setup_function():
+    os.environ["DATA_DIR"] = tempfile.mkdtemp()  # isolate usage.json per test
 
 
 def patch(monkeypatch, **adapters):
@@ -24,70 +21,56 @@ def patch(monkeypatch, **adapters):
 
 def test_hunter_verified_short_circuits(monkeypatch):
     called = {"apollo": False}
-
-    def hunter(c, d):
-        return {"email": "jane@acme.com", "verified": True, "email_status": "verified",
-                "phone": None, "score": 95, "source": "hunter"}
-
-    def apollo(c, d):
-        called["apollo"] = True
-        return None
-
-    patch(monkeypatch, hunter=hunter, apollo=apollo)
-    conn = conn_with(hunter=dict(remaining=50, monthly_quota=50),
-                     apollo=dict(remaining=100, monthly_quota=100))
-    res = enrichment.enrich(conn, CONTACT, "acme.com")
+    patch(monkeypatch,
+          hunter=lambda c, d: {"email": "jane@acme.com", "verified": True,
+                               "email_status": "verified", "phone": None, "source": "hunter"},
+          apollo=lambda c, d: called.__setitem__("apollo", True))
+    usage.seed("hunter", remaining=50, quota=50)
+    usage.seed("apollo", remaining=100, quota=100)
+    res = enrichment.enrich(CONTACT, "acme.com")
     assert res["status"] == "verified" and res["email"] == "jane@acme.com"
-    assert called["apollo"] is False  # never reached Apollo
-    assert credits.check(conn, "hunter")["remaining"] == 49  # 1 credit recorded
+    assert called["apollo"] is False
+    assert usage.check("hunter")["remaining"] == 49
 
 
 def test_hunter_miss_falls_through_to_apollo(monkeypatch):
-    patch(monkeypatch,
-          hunter=lambda c, d: None,
+    patch(monkeypatch, hunter=lambda c, d: None,
           apollo=lambda c, d: {"email": "jane@acme.com", "verified": True,
                                "email_status": "verified", "phone": "+1", "source": "apollo"})
-    conn = conn_with(hunter=dict(remaining=50, monthly_quota=50),
-                     apollo=dict(remaining=100, monthly_quota=100))
-    res = enrichment.enrich(conn, CONTACT, "acme.com")
-    assert res["source"] == "apollo" and res["status"] == "verified"
-    assert credits.check(conn, "hunter")["remaining"] == 49  # hunter still charged for its attempt
+    usage.seed("hunter", remaining=50, quota=50)
+    usage.seed("apollo", remaining=100, quota=100)
+    assert enrichment.enrich(CONTACT, "acme.com")["source"] == "apollo"
 
 
 def test_guessed_not_returned_as_verified(monkeypatch):
-    patch(monkeypatch, hunter=lambda c, d: {
-        "email": "j.doe@acme.com", "verified": False, "email_status": "guessed",
-        "phone": None, "score": 40, "source": "hunter"})
-    conn = conn_with(hunter=dict(remaining=50, monthly_quota=50))
-    res = enrichment.enrich(conn, CONTACT, "acme.com")
-    assert res["status"] == "unverified"  # surfaced as a guess, never 'verified'
+    patch(monkeypatch, hunter=lambda c, d: {"email": "j.doe@acme.com", "verified": False,
+                                            "email_status": "guessed", "source": "hunter"})
+    usage.seed("hunter", remaining=50, quota=50)
+    assert enrichment.enrich(CONTACT, "acme.com")["status"] == "unverified"
 
 
 def test_all_exhausted_needs_credits(monkeypatch):
     patch(monkeypatch, hunter=lambda c, d: {"email": "x", "verified": True})
-    conn = conn_with(hunter=dict(remaining=0, status="exhausted"),
-                     apollo=dict(remaining=0, status="exhausted"))
-    assert enrichment.enrich(conn, CONTACT, "acme.com")["status"] == "needs_credits"
+    usage.seed("hunter", remaining=0)
+    usage.seed("apollo", remaining=0)
+    assert enrichment.enrich(CONTACT, "acme.com")["status"] == "needs_credits"
 
 
 def test_credit_error_marks_exhausted_and_advances(monkeypatch):
     from integrations import CreditError
-
-    def hunter(c, d):
-        raise CreditError("429")
-
-    patch(monkeypatch, hunter=hunter,
+    patch(monkeypatch,
+          hunter=lambda c, d: (_ for _ in ()).throw(CreditError("429")),
           apollo=lambda c, d: {"email": "jane@acme.com", "verified": True,
                                "email_status": "verified", "phone": None, "source": "apollo"})
-    conn = conn_with(hunter=dict(remaining=50, monthly_quota=50),
-                     apollo=dict(remaining=100, monthly_quota=100))
-    res = enrichment.enrich(conn, CONTACT, "acme.com")
+    usage.seed("hunter", remaining=50, quota=50)
+    usage.seed("apollo", remaining=100, quota=100)
+    res = enrichment.enrich(CONTACT, "acme.com")
     assert res["source"] == "apollo"
-    assert credits.check(conn, "hunter")["status"] == "exhausted"
+    assert usage.check("hunter")["status"] == "exhausted"
 
 
-def test_no_match_when_providers_run_but_find_nothing(monkeypatch):
+def test_no_match(monkeypatch):
     patch(monkeypatch, hunter=lambda c, d: None, apollo=lambda c, d: None)
-    conn = conn_with(hunter=dict(remaining=50, monthly_quota=50),
-                     apollo=dict(remaining=100, monthly_quota=100))
-    assert enrichment.enrich(conn, CONTACT, "acme.com")["status"] == "no_match"
+    usage.seed("hunter", remaining=50, quota=50)
+    usage.seed("apollo", remaining=100, quota=100)
+    assert enrichment.enrich(CONTACT, "acme.com")["status"] == "no_match"
