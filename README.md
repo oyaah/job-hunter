@@ -139,6 +139,62 @@ Want it truly hands-off? Pair the watcher with `/loop` on a slow cadence so acce
 
 ---
 
+## How to prompt it well
+
+The skills are smart — you don't recite steps, you hand over context and intent. The richer your first message, the less back-and-forth. A few patterns that work great:
+
+**The one-shot kickoff** — give it the list and your angle in one go:
+
+```
+/job-hunter:hunt
+Companies: Ramp, Linear, Vercel, Supabase, Modal.
+I'm a backend/infra eng (4 yrs, Go + Postgres). Target the eng lead or a
+senior backend IC on the team I'd join — not recruiters. Hook each from
+something real (a recent blog post, launch, or GitHub repo). Keep emails
+to ~4 sentences, lead with the specific thing, no fluff. Show me each
+draft before anything sends.
+```
+
+**Tell it who matters (and who doesn't)** — targeting is judgment; steer it:
+
+```
+For these, the right person is whoever owns developer experience —
+founder at the small ones, Head of DevRel/Platform at the bigger ones.
+Skip anyone in talent/HR. If you can't find a verified email, give me the
+LinkedIn and we'll go connect-first instead of guessing an address.
+```
+
+**Teach it your voice once** — it remembers via `learnings.md`, so corrections compound:
+
+```
+That intro's too formal — I'd never write "I am reaching out regarding."
+Cut it, open with the hook line directly. Remember that for the rest.
+```
+
+**Hands-off acceptance → DM** — fire-and-forget the LinkedIn watch:
+
+```
+/loop 3h /job-hunter:watch
+Check who accepted, draft their DM from their profile, show me before sending.
+```
+
+**Quick status / steering anytime:**
+
+```
+/job-hunter:status                      → where every contact stands
+/job-hunter:review                      → show me everything queued, I'll approve/edit
+"pause LinkedIn for today, just do emails"
+"redo the Vercel email, make it shorter and mention their v0 launch"
+```
+
+### What makes a prompt land
+
+- **Front-load context**: who you are, what you're good at, what you want. It feeds targeting *and* voice.
+- **Define "the right person"** in your words — title, seniority, team — so it doesn't waste credits on the wrong contact.
+- **Set the bar for voice** ("short", "no buzzwords", "mention something specific") — the anti-AI lint handles the obvious tells; you handle taste.
+- **Trust the gate**: you approve every send, so be liberal with "go" and just edit what's off. Every edit teaches it.
+- **Don't micromanage steps** — say the outcome you want, not the sequence. It sequences.
+
 ## Choosing how you send mail — pick one of three
 
 At setup you choose **one** send method (`send_method`). That's it — no stacking, no precedence to reason about.
