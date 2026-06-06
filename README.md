@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🦺 job-hunter
+# 🌟 job-hunter
 
 ### Be the yellow helmet in a sea of grey.
 
