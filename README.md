@@ -143,17 +143,20 @@ Want it truly hands-off? Pair the watcher with `/loop` on a slow cadence so acce
 
 The skills are smart — you don't recite steps, you hand over context and intent. The richer your first message, the less back-and-forth. A few patterns that work great:
 
-**The one-shot kickoff** — give it the list and your angle in one go:
+**The one-shot kickoff** — describe the companies you want and your angle; it finds them. You don't need a hand-typed list:
 
 ```
 /job-hunter:hunt
-Companies: Ramp, Linear, Vercel, Supabase, Modal.
-I'm a backend/infra eng (4 yrs, Go + Postgres). Target the eng lead or a
-senior backend IC on the team I'd join — not recruiters. Hook each from
-something real (a recent blog post, launch, or GitHub repo). Keep emails
-to ~4 sentences, lead with the specific thing, no fluff. Show me each
-draft before anything sends.
+Find me seed-to-Series-A startups in Bangalore doing dev tools or
+infra, ~10-50 people, that fit my resume — I'm a 3rd-year CS student
+looking for a summer SWE internship (Python, React, a bit of ML).
+At each, target the founder or an early eng — not recruiters — and hook
+from something real (a launch, blog post, or repo). Keep it to ~4
+sentences, no fluff. Show me the shortlist first, then each draft before
+anything sends.
 ```
+
+(Already have a list? Just paste it: `Companies: Ramp, Linear, Vercel, Supabase`. Either works — names, or the *criteria* to discover them.)
 
 **Tell it who matters (and who doesn't)** — targeting is judgment; steer it:
 

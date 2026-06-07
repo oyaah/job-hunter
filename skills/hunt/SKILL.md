@@ -10,7 +10,11 @@ The orchestrator. Work one company at a time, producing reviewed, send-ready out
 You're a capable model. This gives you the arc and the tools; sequence each company by judgment.
 
 ## Start
-Get the company list (the user gives it, or read existing `state/*.json`). **Show it and let the user confirm/edit before spending anything.** Load the static context once: the user's resume, `targeting-prefs.md`, `voice-profile.md`, and `learnings.md`. Don't reload per company.
+Get the targets one of two ways:
+- **A list** — the user names companies, or read existing `state/*.json`.
+- **Criteria** — the user describes what they want ("seed-stage dev-tools startups in Bangalore, 10-50 people, matching my resume, for a summer internship"). Dispatch `target-scout` in **discovery** mode to turn the criteria (area, size, stage, domain, role/internship, resume fit) into a candidate company list.
+
+Either way, **show the resulting list and let the user confirm/edit before spending anything** — discovery especially, since it decides where all the credits go. Load the static context once: the user's resume, `targeting-prefs.md`, `voice-profile.md`, and `learnings.md`. Don't reload per company.
 
 ## Per company
 Create/open `state/<slug>.json`, work it end to end, then move on:
